@@ -1,0 +1,75 @@
+"Phrases"
+{
+    "Tele Goto"
+    {
+        "#format"   "{1:N}"
+        "en"        "teleported to {1}"
+        "pt"        "foi até {1}"
+        "es"        "fue hasta {1}"
+        "las"       "fue hasta {1}"
+    }
+    "Tele Bring"
+    {
+        "#format"   "{1:t}"
+        "en"        "brought {1} to their position"
+        "pt"        "trouxe {1} até onde está"
+        "es"        "trajo a {1} hasta donde está"
+        "las"       "trajo a {1} hasta donde está"
+    }
+    "Tele Menu Goto"
+    {
+        "en"        "Go to which player?"
+        "pt"        "Ir até qual jogador?"
+        "es"        "¿Ir hasta qué jugador?"
+        "las"       "¿Ir hasta qué jugador?"
+    }
+    "Tele Menu Bring"
+    {
+        "en"        "Bring which player?"
+        "pt"        "Trazer qual jogador?"
+        "es"        "¿Traer a qué jugador?"
+        "las"       "¿Traer a qué jugador?"
+    }
+    "Tele Alive"
+    {
+        "en"        "You need to be alive to teleport."
+        "pt"        "Você precisa estar vivo para se teletransportar."
+        "es"        "Necesitas estar vivo para teletransportarte."
+        "las"       "Necesitas estar vivo para teletransportarte."
+    }
+    "Tele None"
+    {
+        "en"        "There is no player to choose right now."
+        "pt"        "Nenhum jogador para escolher agora."
+        "es"        "No hay ningún jugador para elegir ahora."
+        "las"       "No hay ningún jugador para elegir ahora."
+    }
+    "Tele Invalid"
+    {
+        "en"        "This player cannot be teleported right now."
+        "pt"        "Esse jogador não pode ser teletransportado agora."
+        "es"        "Ese jugador no puede ser teletransportado ahora."
+        "las"       "Ese jugador no puede ser teletransportado ahora."
+    }
+    "Tele Section"
+    {
+        "en"        "Teleport"
+        "pt"        "Teleporte"
+        "es"        "Teletransporte"
+        "las"       "Teletransporte"
+    }
+    "Tele Item Goto"
+    {
+        "en"        "Go to a player"
+        "pt"        "Ir até um jogador"
+        "es"        "Ir hasta un jugador"
+        "las"       "Ir hasta un jugador"
+    }
+    "Tele Item Bring"
+    {
+        "en"        "Bring a player"
+        "pt"        "Trazer um jogador"
+        "es"        "Traer a un jugador"
+        "las"       "Traer a un jugador"
+    }
+}

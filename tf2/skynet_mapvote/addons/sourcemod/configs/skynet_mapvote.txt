@@ -1,0 +1,16 @@
+// SKYNET Map Vote: mapas da votacao e o hype de cada um (0 a 5; quanto maior, mais aparece).
+// Map list for the vote and each map's hype (0 to 5; higher = shows up more often).
+// Mapas que nao estao instalados sao ignorados. / Maps that are not installed are skipped.
+"SkynetMapVote"
+{
+    "ctf_2fort"             "5"
+    "pl_badwater"           "5"
+    "cp_dustbowl"           "4"
+    "koth_harvest_final"    "4"
+    "cp_granary"            "3"
+    "cp_well"               "3"
+    "pl_upward"             "3"
+    "koth_viaduct"          "3"
+    "ctf_turbine"           "2"
+    "cp_gravelpit"          "2"
+}
