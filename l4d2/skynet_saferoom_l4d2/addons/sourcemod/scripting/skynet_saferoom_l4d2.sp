@@ -15,7 +15,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Avisa quem abre e fecha a porta do abrigo e trava aberta a porta do abrigo inicial",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 ConVar g_cvAnnounce;

@@ -12,7 +12,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Votacao do proximo mapa: opcoes escolhidas por hype, tempo sem jogar e tempo fora da votacao",
     version = "1.2",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 ConVar g_cvVoteTime, g_cvCooldown, g_cvStarve, g_cvOptions;

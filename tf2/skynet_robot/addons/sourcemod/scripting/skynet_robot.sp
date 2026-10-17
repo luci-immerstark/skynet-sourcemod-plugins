@@ -11,7 +11,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Comando !robot: vira um robo do Mann vs. Machine (modelo, voz e passos)",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 bool g_Robot[MAXPLAYERS + 1];

@@ -10,7 +10,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Dodgeball: todo mundo entra como Pyro, sem menu de classes e sem troca de classe",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 public void OnPluginStart()

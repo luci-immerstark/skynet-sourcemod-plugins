@@ -12,7 +12,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "No inicio de cada rodada, recoloca no time quem ficou preso como espectador ou morto",
     version = "1.1",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 char g_sLog[PLATFORM_MAX_PATH];

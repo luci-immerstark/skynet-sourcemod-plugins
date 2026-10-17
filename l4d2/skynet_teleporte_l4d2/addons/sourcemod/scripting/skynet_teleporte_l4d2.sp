@@ -11,7 +11,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Admin vai ate um jogador (!goto) ou traz um jogador ate ele (!bring)",
     version = "1.1",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 #define TAG "\x04[SKYNET]\x01 "

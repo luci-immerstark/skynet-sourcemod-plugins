@@ -9,7 +9,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Expulsa quem fica ausente (sem mexer) por muito tempo, para liberar a vaga",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // Com o "Jogo com Ausentes" a partida nao acaba mais quando todo mundo fica ausente.

@@ -13,7 +13,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Hordas de zumbis comuns proporcionais ao numero de sobreviventes vivos",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // cvars do jogo e os valores originais (feitos para 4 sobreviventes)

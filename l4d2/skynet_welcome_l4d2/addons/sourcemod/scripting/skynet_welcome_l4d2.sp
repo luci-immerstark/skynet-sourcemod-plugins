@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Mensagem de boas-vindas uma vez por conexao",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 StringMap g_Shown;

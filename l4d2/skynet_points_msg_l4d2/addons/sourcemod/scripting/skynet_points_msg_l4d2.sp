@@ -11,7 +11,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Mensagens de pontos e de compras em portugues, no lugar das originais do Point System API",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)

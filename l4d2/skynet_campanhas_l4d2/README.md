@@ -31,7 +31,7 @@ Votação da próxima campanha na fase final, troca automática depois do resgat
 |---|---|---|
 | `sm_proxima` / `!proxima` | todos | Mostra a proxima campanha |
 | `sm_campanha_trocar` / `!campanha_trocar` | admin (flag `g`) | Troca de campanha agora (comeca do primeiro capitulo) |
-| `sm_campanha_votar` / `!campanha_votar` | admin (flag `j`) | Votacao da proxima campanha (a troca so acontece depois do resgate) |
+| `sm_campanha_votar` / `!campanha_votar` | admin (flag `k`) | Votacao da proxima campanha (a troca so acontece depois do resgate) |
 | `sm_campanha_status` / `!campanha_status` | admin (flag `g`) | Mostra o historico e o peso de cada campanha |
 
 ### Cvars
@@ -80,7 +80,7 @@ Next-campaign vote during the finale, automatic switch after the rescue, and a c
 |---|---|---|
 | `sm_proxima` / `!proxima` | everyone | Shows the next campaign |
 | `sm_campanha_trocar` / `!campanha_trocar` | admin (flag `g`) | Changes campaign now (starts at chapter 1) |
-| `sm_campanha_votar` / `!campanha_votar` | admin (flag `j`) | Opens the next-campaign vote (switch happens after the rescue) |
+| `sm_campanha_votar` / `!campanha_votar` | admin (flag `k`) | Opens the next-campaign vote (switch happens after the rescue) |
 | `sm_campanha_status` / `!campanha_status` | admin (flag `g`) | Shows history and weight of each campaign |
 
 ### Cvars

@@ -87,7 +87,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Coloca muitas armas de fogo e corpo a corpo no abrigo inicial de cada capitulo",
     version = PLUGIN_VERSION,
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)

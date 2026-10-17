@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "A partida continua quando todos os jogadores ficam ausentes (idle)",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // Por padrao o jogo encerra a partida quando nao sobra nenhum humano controlando sobrevivente

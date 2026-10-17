@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Somente admins abrem votacoes do jogo (dificuldade, kick, reiniciar, trocar campanha, lobby)",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 ConVar g_cvAllow;

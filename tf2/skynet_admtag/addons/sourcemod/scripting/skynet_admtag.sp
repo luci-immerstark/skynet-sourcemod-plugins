@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Tag [ADM] no chat para os administradores",
     version = "1.1",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 public void OnPluginStart()

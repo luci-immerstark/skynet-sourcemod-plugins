@@ -10,7 +10,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Sem fogo amigo; molotov queima quem jogou; fogo de galao nao fere sobrevivente; fogo do mapa mais forte",
     version = "1.3",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // 1.2: o molotov volta a queimar quem jogou; o fogo de galao de gasolina (e de barril de combustivel,

@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Mantem o servidor sempre na dificuldade Expert",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // O lobby do jogo (ou uma votacao) pode trocar a dificuldade; a primeira campanha depois do servidor vazio

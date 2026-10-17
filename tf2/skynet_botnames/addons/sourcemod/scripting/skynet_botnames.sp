@@ -9,7 +9,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Nomes fixos para os bots e chat limpo nas entradas e saidas deles",
     version = "1.1",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // Edite esta lista com os nomes que quiser. / Edit this list with any names you like.

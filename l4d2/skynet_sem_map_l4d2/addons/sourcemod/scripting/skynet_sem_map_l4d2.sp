@@ -8,7 +8,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Bloqueia !map e !votemap no jogo: a troca de campanha e pelo menu de admin",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // O !map e o !votemap usam a troca de mapa antiga (nome em codigo e abertura da campanha quebrada).

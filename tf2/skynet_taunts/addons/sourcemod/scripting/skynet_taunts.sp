@@ -14,7 +14,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Menu !taunt com todas as taunts do jogo (lista em configs/skynet_taunts.txt)",
     version = "1.0",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 int g_Id[MAX_TAUNTS];

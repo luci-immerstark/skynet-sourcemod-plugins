@@ -12,7 +12,7 @@ public Plugin myinfo =
     author = "SKYNET GAMING",
     description = "Os pontos da loja duram a campanha inteira e zeram quando o jogador sai do servidor ou a campanha termina",
     version = "1.1",
-    url = "https://github.com/lmattedi/skynet-sourcemod-plugins"
+    url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // 1.1: o Point System devolve, na fase seguinte, o saldo que o jogador tinha quando entrou no time

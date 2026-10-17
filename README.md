@@ -21,6 +21,8 @@ As mensagens que os plugins mostram no chat estão em português (alguns também
 | [Welcome](tf2/skynet_welcome/) | Mensagem de boas-vindas no chat, uma vez por conexão. | 1.1 |
 | [Bot Names](tf2/skynet_botnames/) | Nomes fixos para os bots e chat limpo nas entradas e saídas deles. | 1.1 |
 | [Pyro Only](tf2/skynet_pyroonly/) | Para servidores de Dodgeball: todo mundo joga de Pyro. | 1.0 |
+| [Auto Reflect](tf2/skynet_autoreflect/) | Dodgeball: auto reflect para admins e o modo TODOS CONTRA O BOT, aberto por votação. | 3.0 |
+| [Nuke](tf2/skynet_nuke/) | Dodgeball: o foguete NUKE fica maior que os outros. | 2.0 |
 
 ### Left 4 Dead 2
 
@@ -42,12 +44,13 @@ As mensagens que os plugins mostram no chat estão em português (alguns também
 | [Votes](l4d2/skynet_votes/) | Só admins abrem as votações do jogo (dificuldade, kick, reiniciar, trocar campanha, lobby). | 1.0 |
 | [Welcome](l4d2/skynet_welcome_l4d2/) | Mensagem de boas-vindas no chat, uma vez por conexão. | 1.0 |
 | [Admin Tag](l4d2/skynet_admtag_l4d2/) | Tag verde `[ADM]` antes do nome dos administradores no chat. | 1.0 |
+| [Melee Fixo](l4d2/skynet_melee_fixo_l4d2/) | Golpe corpo a corpo tira dano fixo do Tank e da Witch, e a vida da Witch cresce com o número de sobreviventes. | 1.2 |
 
 ### Instalação
 
 **Antes de tudo:** o servidor precisa ter o [Metamod:Source](https://www.sourcemm.net/downloads.php) e o [SourceMod 1.12 ou mais novo](https://www.sourcemod.net/downloads.php) instalados.
 
-1. **Baixe os plugins.** Opção mais fácil: na página de [Releases](https://github.com/lmattedi/skynet-sourcemod-plugins/releases/latest), baixe o `.zip` do seu jogo (vem com todos os plugins daquele jogo). Ou entre na pasta de um plugin aqui no GitHub e baixe só ele.
+1. **Baixe os plugins.** Opção mais fácil: na página de [Releases](https://github.com/luci-immerstark/skynet-sourcemod-plugins/releases/latest), baixe o `.zip` do seu jogo (vem com todos os plugins daquele jogo). Ou entre na pasta de um plugin aqui no GitHub e baixe só ele.
 2. **Copie a pasta `addons`** para dentro da pasta do jogo no servidor, juntando com a que já existe:
    - Team Fortress 2: `<pasta-do-servidor>/tf/`
    - Left 4 Dead 2: `<pasta-do-servidor>/left4dead2/`
@@ -69,11 +72,12 @@ Onde cada arquivo fica:
 
 ### Dependências de outros autores (não incluídas)
 
-Alguns plugins de Left 4 Dead 2 usam plugins de outros autores. O README de cada plugin diz se a dependência é obrigatória ou opcional.
+Alguns plugins usam plugins de outros autores. O README de cada plugin diz se a dependência é obrigatória ou opcional.
 
 - [Left 4 DHooks Direct](https://forums.alliedmods.net/showthread.php?t=321696) (SilverShot): Próxima Campanha, Arsenal, Saferoom Door e Rejoin
 - [Points System API](https://github.com/eyal282/l4d2-point-system-api) (Eyal282): Pontos por Sessão e Points Messages
 - Um plugin que crie o comando `sm_join`, como o [MultiSlots](https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4dmultislots): Rejoin
+- [TF2 Dodgeball Modified](https://github.com/Silorak/TF2-Dodgeball-Modified) (Silorak): Nuke (obrigatório) e Auto Reflect (opcional)
 
 ### Permissões de admin
 
@@ -109,6 +113,8 @@ In-game chat messages are in Portuguese (some also in Spanish). Each plugin work
 | [Welcome](tf2/skynet_welcome/) | Welcome message in chat, once per connection. | 1.1 |
 | [Bot Names](tf2/skynet_botnames/) | Fixed names for bots and a clean chat when they join and leave. | 1.1 |
 | [Pyro Only](tf2/skynet_pyroonly/) | For Dodgeball servers: everyone plays Pyro. | 1.0 |
+| [Auto Reflect](tf2/skynet_autoreflect/) | Dodgeball: auto reflect for admins and an ALL VS BOT mode started by a vote. | 3.0 |
+| [Nuke](tf2/skynet_nuke/) | Dodgeball: the NUKE rocket is bigger than the others. | 2.0 |
 
 ### Left 4 Dead 2
 
@@ -130,12 +136,13 @@ In-game chat messages are in Portuguese (some also in Spanish). Each plugin work
 | [Votes](l4d2/skynet_votes/) | Only admins can call the game's votes (difficulty, kick, restart, change campaign, lobby). | 1.0 |
 | [Welcome](l4d2/skynet_welcome_l4d2/) | Welcome message in chat, once per connection. | 1.0 |
 | [Admin Tag](l4d2/skynet_admtag_l4d2/) | Green `[ADM]` tag before admin names in chat. | 1.0 |
+| [Fixed Melee Damage](l4d2/skynet_melee_fixo_l4d2/) | Melee hits deal fixed damage to the Tank and the Witch, and the Witch's health grows with the number of survivors. | 1.2 |
 
 ### Installation
 
 **First:** the server needs [Metamod:Source](https://www.sourcemm.net/downloads.php) and [SourceMod 1.12 or newer](https://www.sourcemod.net/downloads.php).
 
-1. **Download the plugins.** Easiest: grab your game's `.zip` from [Releases](https://github.com/lmattedi/skynet-sourcemod-plugins/releases/latest) (it has every plugin for that game). Or open a plugin's folder here on GitHub and download just that one.
+1. **Download the plugins.** Easiest: grab your game's `.zip` from [Releases](https://github.com/luci-immerstark/skynet-sourcemod-plugins/releases/latest) (it has every plugin for that game). Or open a plugin's folder here on GitHub and download just that one.
 2. **Copy the `addons` folder** into the game folder on the server, merging with the existing one:
    - Team Fortress 2: `<server-folder>/tf/`
    - Left 4 Dead 2: `<server-folder>/left4dead2/`
@@ -157,11 +164,12 @@ Where each file goes:
 
 ### Third-party dependencies (not included)
 
-Some Left 4 Dead 2 plugins use plugins by other authors. Each plugin's README says whether the dependency is required or optional.
+Some plugins use plugins by other authors. Each plugin's README says whether the dependency is required or optional.
 
 - [Left 4 DHooks Direct](https://forums.alliedmods.net/showthread.php?t=321696) (SilverShot): Next Campaign, Arsenal, Saferoom Door and Rejoin
 - [Points System API](https://github.com/eyal282/l4d2-point-system-api) (Eyal282): Session Points and Points Messages
 - A plugin that provides `sm_join`, such as [MultiSlots](https://github.com/fbef0102/L4D1_2-Plugins/tree/master/l4dmultislots): Rejoin
+- [TF2 Dodgeball Modified](https://github.com/Silorak/TF2-Dodgeball-Modified) (Silorak): Nuke (required) and Auto Reflect (optional)
 
 ### Admin permissions
 
