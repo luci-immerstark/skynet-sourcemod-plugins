@@ -11,6 +11,7 @@ Dodgeball: o foguete NUKE fica maior que os outros.
 ### O que faz
 - Cada foguete da classe `nuke` do Dodgeball sai `skynet_nuke_escala` vezes maior (padrão: 5). Só muda o visual: a área de acerto continua a de um foguete normal.
 - A classe é reconhecida pelo nome no `general.cfg` do Dodgeball (`skynet_nuke_classe`).
+- Nosso servidor de Dodgeball não usa mais a NUKE (só o foguete normal), mas o plugin continua aqui para quem quiser.
 - Usa o foguete normal do Soldier, que já vem no jogo: os jogadores não baixam nada.
 
 ### Requisitos
@@ -40,6 +41,7 @@ Dodgeball: the NUKE rocket is bigger than the others.
 ### What it does
 - Every rocket of the Dodgeball `nuke` class is `skynet_nuke_escala` times bigger (default: 5). Visual only: the hitbox stays the size of a normal rocket.
 - The class is matched by its name in the Dodgeball `general.cfg` (`skynet_nuke_classe`).
+- Our Dodgeball server no longer uses the NUKE (only the normal rocket), but the plugin stays here for anyone who wants it.
 - Uses the Soldier's regular rocket, which ships with the game, so players download nothing.
 
 ### Requirements

@@ -1,6 +1,6 @@
 # SKYNET Map Vote
 
-**Team Fortress 2** · v1.2 · `skynet_mapvote.smx`
+**Team Fortress 2** · v1.5 · `skynet_mapvote.smx`
 
 [Português](#português) · [English](#english) · [Todos os plugins / All plugins](../../README.md)
 
@@ -17,6 +17,9 @@ Votação do próximo mapa com opções sorteadas por hype, tempo sem jogar e te
 - O mapa vencedor vira o próximo mapa (`nextmap`). Se ninguém votar, vale a primeira opção.
 - O histórico fica salvo em `configs/skynet_mapvote_state.txt` e continua depois de reiniciar o servidor.
 - Mapas da lista que não estão instalados são ignorados (aparece um aviso no log de erros).
+- **Estender**: toda votação de fim de mapa tem uma opção fixa a mais, `Estender <mapa atual> (+10 min)`. Se ela ganhar, o `mp_timelimit` cresce `skynet_mapvote_extend` minutos (e o `mp_maxrounds` ganha mais 1 rodada, se estiver em uso) e a votação volta perto do novo fim. Os valores originais voltam na troca de mapa.
+- **!rtv**: quando `skynet_rtv_needed` dos jogadores (padrão: 60%) digita `!rtv` (ou só `rtv`), abre uma votação para trocar de mapa agora. A opção fixa dela é `Continuar em <mapa atual>`. Se um mapa ganhar, a troca acontece em 5 segundos. Se o próximo mapa já tinha sido escolhido, o servidor vai direto para ele.
+- **!nominate**: abre um menu com os mapas em ordem alfabética para indicar um para a próxima votação (`!nominate <parte do nome>` filtra). Cada jogador indica um mapa; indicar outro troca o seu. Os indicados entram primeiro na votação, na ordem das indicações, e o resto das vagas é sorteado como sempre. O mapa atual, os mapas com hype 0 e os que estão em cooldown não podem ser indicados.
 
 ### Requisitos
 - SourceMod 1.12 ou mais novo e Metamod:Source
@@ -32,6 +35,8 @@ Votação do próximo mapa com opções sorteadas por hype, tempo sem jogar e te
 |---|---|---|
 | `sm_mapvote_status` / `!mapvote_status` | admin (flag `g`) | Mostra o hype, o historico e o peso de cada mapa |
 | `sm_mapvote_now` / `!mapvote_now` | admin (flag `g`) | Inicia agora a votacao do proximo mapa |
+| `sm_rtv` / `!rtv` (ou `rtv`, `rockthevote`) | todos | Vota para trocar de mapa agora |
+| `sm_nominate` / `!nominate [busca]` (ou `nominate`) | todos | Indica um mapa para a proxima votacao |
 
 ### Cvars
 O arquivo `cfg/sourcemod/skynet_mapvote.cfg` é criado sozinho no primeiro carregamento. Edite os valores lá e troque de mapa.
@@ -50,9 +55,18 @@ O arquivo `cfg/sourcemod/skynet_mapvote.cfg` é criado sozinho no primeiro carre
 | `skynet_mapvote_play_cap` | `1.8` | Bonus maximo por tempo sem ser jogado |
 | `skynet_mapvote_delay` | `180` | Segundos depois do inicio da ultima rodada para abrir a votacao |
 | `skynet_mapvote_before` | `180` | Abre a votacao quando faltar este tempo (segundos) para o fim do mapa pelo mp_timelimit. 0 = usa o modo por rodadas |
+| `skynet_mapvote_extend` | `10` | Minutos a mais quando a votacao escolhe estender o mapa atual. 0 = sem essa opcao |
+| `skynet_rtv_needed` | `0.60` | Fracao dos jogadores que precisa digitar !rtv para trocar de mapa |
+| `skynet_rtv_delay` | `60` | Segundos depois do inicio do mapa para liberar o !rtv |
+| `skynet_rtv_interval` | `240` | Se a maioria escolher continuar, segundos ate o !rtv valer de novo |
 
 ### Observações
-- Desative outras votações de fim de mapa (`mapchooser.smx`, `rockthevote.smx`) para não abrir duas votações ao mesmo tempo.
+- Desative os plugins de mapa que vêm no SourceMod (`mapchooser.smx`, `rockthevote.smx`, `nominations.smx`): este plugin já faz o papel dos três, e com eles ligados abririam duas votações.
+
+### Mudanças desde a 1.2
+- 1.3: opção fixa de estender o mapa atual.
+- 1.4: `!rtv`.
+- 1.5: `!nominate`.
 
 ## English
 
@@ -67,6 +81,9 @@ Next-map vote whose options are drawn by hype, time since last played and time s
 - The winning map becomes the `nextmap`. If nobody votes, the first option wins.
 - History is saved to `configs/skynet_mapvote_state.txt` and survives server restarts.
 - Maps in the list that are not installed are skipped (a warning goes to the error log).
+- **Extend**: every end-of-map vote has one extra fixed option, `Estender <current map> (+10 min)`. If it wins, `mp_timelimit` grows by `skynet_mapvote_extend` minutes (and `mp_maxrounds` gets 1 more round, if used) and the vote comes back near the new end. The original values return on map change.
+- **!rtv**: when `skynet_rtv_needed` of the players (default: 60%) type `!rtv` (or just `rtv`), a vote to change map right now opens. Its fixed option is `Continuar em <current map>` (stay). If a map wins, the change happens in 5 seconds. If the next map was already chosen, the server goes straight to it.
+- **!nominate**: opens a menu with the maps in alphabetical order to nominate one for the next vote (`!nominate <part of the name>` filters). Each player nominates one map; nominating another replaces theirs. Nominated maps go into the vote first, in nomination order, and the remaining slots are drawn as usual. The current map, maps with hype 0 and maps on cooldown cannot be nominated.
 
 ### Requirements
 - SourceMod 1.12 or newer and Metamod:Source
@@ -82,6 +99,8 @@ Next-map vote whose options are drawn by hype, time since last played and time s
 |---|---|---|
 | `sm_mapvote_status` / `!mapvote_status` | admin (flag `g`) | Shows hype, history and weight of each map |
 | `sm_mapvote_now` / `!mapvote_now` | admin (flag `g`) | Starts the next-map vote now |
+| `sm_rtv` / `!rtv` (or `rtv`, `rockthevote`) | everyone | Votes to change map now |
+| `sm_nominate` / `!nominate [search]` (or `nominate`) | everyone | Nominates a map for the next vote |
 
 ### Cvars
 `cfg/sourcemod/skynet_mapvote.cfg` is created automatically on first load. Edit the values there and change map.
@@ -100,6 +119,15 @@ Next-map vote whose options are drawn by hype, time since last played and time s
 | `skynet_mapvote_play_cap` | `1.8` | Maximum bonus for time without being played |
 | `skynet_mapvote_delay` | `180` | Round mode: seconds after the last round starts before opening the vote |
 | `skynet_mapvote_before` | `180` | Time mode: open the vote when this many seconds are left on mp_timelimit. 0 = round mode |
+| `skynet_mapvote_extend` | `10` | Extra minutes when the vote picks extending the current map. 0 = no extend option |
+| `skynet_rtv_needed` | `0.60` | Fraction of players who must type !rtv to change map |
+| `skynet_rtv_delay` | `60` | Seconds after the map starts before !rtv is allowed |
+| `skynet_rtv_interval` | `240` | If most players choose to stay, seconds until !rtv counts again |
 
 ### Notes
-- Disable other end-of-map votes (`mapchooser.smx`, `rockthevote.smx`) so two votes do not open at once.
+- Disable SourceMod's own map plugins (`mapchooser.smx`, `rockthevote.smx`, `nominations.smx`): this plugin covers all three, and with them loaded two votes would open.
+
+### Changes since 1.2
+- 1.3: fixed option to extend the current map.
+- 1.4: `!rtv`.
+- 1.5: `!nominate`.

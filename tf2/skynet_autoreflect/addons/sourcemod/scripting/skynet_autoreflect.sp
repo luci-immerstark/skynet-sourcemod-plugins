@@ -7,8 +7,8 @@ public Plugin myinfo =
 {
     name = "SKYNET Auto Reflect",
     author = "SKYNET GAMING",
-    description = "Auto reflect para admins (root) e o modo TODOS CONTRA O BOT, aberto por votacao dos admins",
-    version = "3.0",
+    description = "Auto reflect para admins (root) e o modo TODOS CONTRA O BOT automatico com poucos jogadores",
+    version = "4.2",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -16,13 +16,19 @@ public Plugin myinfo =
 // do olho e a caixa vai 128 para os lados e 64 para cima e para baixo. So sopra com o foguete dentro da
 // caixa e com o sopro pronto; quanto mais rapido o foguete, mais cedo dentro da caixa.
 //
-// Modo BOT: um admin abre a votacao (!votebot). Se a maioria dos votos for "Sim", entra um bot Pyro no
-// time azul que fica parado onde nasce e rebate sozinho; todos os jogadores vao para o vermelho.
-// Com o modo ligado, !votebot abre a votacao para tirar o bot; !botoff tira na hora.
+// Modo BOT automatico: com 1 a 3 jogadores nos times (skynet_bot_jogadores - 1), entra o SKYNET BOT no azul,
+// parado onde nasce e rebatendo sozinho, e todos os jogadores vao para o vermelho (treino). Quando o 4o
+// jogador entra num time, o bot sai e os times sao embaralhados (2x2). O ranking (HLstats) ja so conta com
+// 4 jogadores ou mais e ignora bots. A troca so acontece depois de alguns segundos na mesma situacao.
+//
+// Cota de bots: o tf_bot_add do TF2 soma 1 no tf_bot_quota, e o jogo repoe qualquer bot que saia por kick
+// enquanto a cota nao baixar (era isso que fazia entrar e sair um monte de bot e aparecer "bot normal").
+// Por isso a cota vai para 0 antes de tirar qualquer bot.
 
 #define NOME_BOT "SKYNET BOT"
 #define TIME_VERMELHO 2
 #define TIME_AZUL 3
+#define ESPERA 5          // checagens (1 por segundo) na mesma situacao antes de trocar o modo
 
 // Funcoes do plugin de Dodgeball (opcionais: sem elas, decide so pela posicao do foguete)
 native int TFDB_FindRocketByEntity(int iEntity);
@@ -35,13 +41,15 @@ ConVar g_cvLado;
 ConVar g_cvAltura;
 ConVar g_cvEmergencia;
 ConVar g_cvPerto;
+ConVar g_cvBotAuto;
+ConVar g_cvJogadores;
 
 bool g_bModoBot;
 int g_iBot;
 bool g_bTemAncora;
 float g_fAncora[3];
-int g_iBalanceAntes = 1;
-int g_iLimiteAntes = 1;
+int g_iEstavel;
+float g_fPedidoBot;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -57,9 +65,15 @@ public void OnPluginStart()
     g_cvAltura     = CreateConVar("skynet_autoreflect_altura", "56", "Metade da altura da area do sopro usada (o jogo usa 64; menor = mais seguro)", _, true, 16.0, true, 96.0);
     g_cvEmergencia = CreateConVar("skynet_autoreflect_emergencia", "110", "Rebate qualquer foguete inimigo mais perto que isto, mesmo mirando outro jogador", _, true, 0.0, true, 300.0);
     g_cvPerto      = CreateConVar("skynet_autoreflect_perto", "180", "Com o foguete lento, espera ele chegar a esta distancia para soprar", _, true, 60.0, true, 256.0);
+    LoadTranslations("common.phrases");
     RegAdminCmd("sm_autoreflect", Cmd_Auto, ADMFLAG_ROOT, "Liga/desliga o auto reflect (sem nome = em voce)");
-    RegAdminCmd("sm_votebot", Cmd_VoteBot, ADMFLAG_VOTE, "Abre a votacao do modo TODOS CONTRA O BOT (ou para tirar o bot)");
-    RegAdminCmd("sm_botoff", Cmd_BotOff, ADMFLAG_VOTE, "Tira o bot na hora");
+    g_cvBotAuto    = CreateConVar("skynet_bot_auto", "1", "1 = com poucos jogadores nos times, todos contra o SKYNET BOT", _, true, 0.0, true, 1.0);
+    g_cvJogadores  = CreateConVar("skynet_bot_jogadores", "4", "Com este numero de jogadores nos times o bot sai e o jogo fica normal", _, true, 2.0, true, 32.0);
+    CreateTimer(1.0, T_Checar, _, TIMER_REPEAT);
+    Cota(0);
+    // a versao antiga podia ter deixado o balanceamento desligado: comeca no normal do servidor
+    FindConVar("mp_autoteambalance").SetInt(1);
+    FindConVar("mp_teams_unbalance_limit").SetInt(1);
     AddCommandListener(Ouvir_Time, "jointeam");
     AddCommandListener(Ouvir_Time, "autoteam");
     HookEvent("player_spawn", Ev_Spawn);
@@ -74,13 +88,15 @@ public void OnAllPluginsLoaded()
 public void OnPluginEnd()
 {
     if (g_bModoBot)
-        DesligarBot("");
+        DesligarBot(false);
 }
 
 public void OnMapEnd()
 {
+    // na troca de mapa o bot sai; no mapa novo o modo volta sozinho se tiver poucos jogadores
     if (g_bModoBot)
-        DesligarBot("");
+        DesligarBot(false);
+    g_iEstavel = 0;
 }
 
 // ---------------------------------------------------------------- auto reflect em jogadores
@@ -107,145 +123,142 @@ public Action Cmd_Auto(int client, int args)
     return Plugin_Handled;
 }
 
-// ---------------------------------------------------------------- modo TODOS CONTRA O BOT
+// ---------------------------------------------------------------- modo TODOS CONTRA O BOT (automatico)
 
-public Action Cmd_VoteBot(int client, int args)
+int HumanosNosTimes()
 {
-    if (IsVoteInProgress())
+    int n = 0;
+    for (int i = 1; i <= MaxClients; i++)
     {
-        ReplyToCommand(client, "[SKYNET] Ja tem uma votacao em andamento.");
-        return Plugin_Handled;
+        if (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i) >= TIME_VERMELHO)
+            n++;
     }
-    Menu menu = new Menu(H_Votacao, MENU_ACTIONS_ALL);
-    menu.SetTitle(g_bModoBot ? "Tirar o SKYNET BOT e voltar ao normal?" : "Jogar TODOS CONTRA O BOT do auto reflect?");
-    menu.AddItem("sim", "Sim");
-    menu.AddItem("nao", "Nao");
-    menu.ExitButton = false;
-    menu.DisplayVoteToAll(20);
-    PrintToChatAll("\x04[SKYNET]\x01 \x03%N\x01 abriu a votacao: %s Vote em 20 segundos.", client,
-        g_bModoBot ? "tirar o SKYNET BOT?" : "todos contra o SKYNET BOT, que rebate tudo sozinho?");
-    return Plugin_Handled;
+    return n;
 }
 
-public int H_Votacao(Menu menu, MenuAction action, int param1, int param2)
+void Cota(int n)
 {
-    if (action == MenuAction_End)
+    ConVar cota = FindConVar("tf_bot_quota");
+    if (cota != null && cota.IntValue != n)
+        cota.SetInt(n);
+}
+
+// Acha o nosso bot e tira qualquer outro bot (ou o nosso, com o modo desligado)
+void AcharBot()
+{
+    int antes = g_iBot;
+    g_iBot = 0;
+    int sobra[MAXPLAYERS + 1];
+    int n = 0;
+    for (int i = 1; i <= MaxClients; i++)
     {
-        delete menu;
-    }
-    else if (action == MenuAction_VoteCancel)
-    {
-        PrintToChatAll("\x04[SKYNET]\x01 Votacao encerrada sem votos.");
-    }
-    else if (action == MenuAction_VoteEnd)
-    {
-        int votos, total;
-        GetMenuVoteInfo(param2, votos, total);
-        char item[8];
-        menu.GetItem(param1, item, sizeof(item));
-        int sim = StrEqual(item, "sim") ? votos : total - votos;
-        if (sim * 2 > total)
-        {
-            PrintToChatAll("\x04[SKYNET]\x01 Aprovado: %d de %d votos.", sim, total);
-            if (g_bModoBot)
-                DesligarBot("Votacao aprovada: o SKYNET BOT saiu.");
-            else
-                LigarBot();
-        }
+        if (!IsClientInGame(i) || !IsFakeClient(i) || IsClientSourceTV(i) || IsClientReplay(i))
+            continue;
+        char nome[MAX_NAME_LENGTH];
+        GetClientName(i, nome, sizeof(nome));
+        if (g_bModoBot && g_iBot == 0 && StrContains(nome, NOME_BOT) != -1)
+            g_iBot = i;
         else
-        {
-            PrintToChatAll("\x04[SKYNET]\x01 Nao aprovado: %d de %d votos no Sim (precisa de mais da metade).", sim, total);
-        }
+            sobra[n++] = i;
     }
-    return 0;
+    if (n > 0)
+    {
+        Cota(g_iBot > 0 ? 1 : 0);   // senao o TF2 coloca outro bot no lugar
+        for (int k = 0; k < n; k++)
+            KickClient(sobra[k], "%s", g_bModoBot ? "Bot sobrando" : "Modo bot desligado");
+    }
+    if (g_iBot != antes)
+        g_bTemAncora = false;
 }
 
-public Action Cmd_BotOff(int client, int args)
+public Action T_Checar(Handle timer)
 {
-    if (!g_bModoBot)
+    AcharBot();
+    int humanos = HumanosNosTimes();
+    bool quer = g_cvBotAuto.BoolValue && humanos >= 1 && humanos < g_cvJogadores.IntValue;
+    if (quer != g_bModoBot)
     {
-        ReplyToCommand(client, "[SKYNET] O modo bot nao esta ligado.");
-        return Plugin_Handled;
+        g_iEstavel++;
+        if (g_iEstavel >= ESPERA || humanos == 0)
+        {
+            g_iEstavel = 0;
+            if (quer)
+                LigarBot();
+            else
+                DesligarBot(humanos > 0);
+        }
     }
-    DesligarBot("Um admin tirou o SKYNET BOT.");
-    return Plugin_Handled;
+    else
+        g_iEstavel = 0;
+
+    if (g_bModoBot)
+        ManterBot();
+    return Plugin_Continue;
 }
 
 void LigarBot()
 {
-    ConVar balance = FindConVar("mp_autoteambalance");
-    ConVar limite = FindConVar("mp_teams_unbalance_limit");
-    g_iBalanceAntes = balance.IntValue;
-    g_iLimiteAntes = limite.IntValue;
-    balance.SetInt(0);
-    limite.SetInt(0);
-    ServerCommand("tf_bot_quota_mode normal");
-    ServerCommand("tf_bot_quota 0");
+    FindConVar("mp_autoteambalance").SetInt(0);
+    FindConVar("mp_teams_unbalance_limit").SetInt(0);
+    ConVar modo = FindConVar("tf_bot_quota_mode");
+    if (modo != null)
+        modo.SetString("normal");
+    Cota(0);
     ServerCommand("tf_bot_auto_vacate 0");
     ServerCommand("tf_bot_keep_class_after_death 1");
     ServerCommand("tf_bot_taunt_victim_chance 0");
+    g_bModoBot = true;
+    g_iBot = 0;
+    g_bTemAncora = false;
+    g_fPedidoBot = 0.0;
+    ManterBot();
+    PrintToChatAll("\x04[SKYNET]\x01 Menos de %d jogadores: modo \x03TODOS CONTRA O BOT\x01 (treino, sem ranking). Todo mundo no vermelho.",
+        g_cvJogadores.IntValue);
+}
 
-    // Todos os jogadores no vermelho antes do bot entrar no azul
+// Com o modo ligado: o bot no azul e todos os jogadores no vermelho
+void ManterBot()
+{
+    if (g_iBot == 0 && (g_fPedidoBot == 0.0 || GetEngineTime() - g_fPedidoBot > 5.0))
+    {
+        ServerCommand("tf_bot_add 1 pyro blue expert \"%s\"", NOME_BOT);
+        g_fPedidoBot = GetEngineTime();
+    }
+    if (g_iBot > 0 && GetClientTeam(g_iBot) != TIME_AZUL)
+        ChangeClientTeam(g_iBot, TIME_AZUL);
     for (int i = 1; i <= MaxClients; i++)
     {
         if (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i) == TIME_AZUL)
             ChangeClientTeam(i, TIME_VERMELHO);
     }
-    g_bModoBot = true;
-    g_iBot = 0;
-    g_bTemAncora = false;
-    ServerCommand("tf_bot_add 1 pyro blue expert \"%s\"", NOME_BOT);
-    PrintToChatAll("\x04[SKYNET]\x01 Modo \x03TODOS CONTRA O BOT\x01 ligado: todo mundo no time vermelho. O bot entra no azul.");
 }
 
-void DesligarBot(const char[] aviso)
+void DesligarBot(bool avisar)
 {
     g_bModoBot = false;
     g_bTemAncora = false;
-    if (g_iBot > 0 && IsClientInGame(g_iBot))
-        KickClient(g_iBot, "Modo bot desligado");
     g_iBot = 0;
+    Cota(0);
+    AcharBot();
     ServerCommand("tf_bot_kick all");
-    FindConVar("mp_autoteambalance").SetInt(g_iBalanceAntes);
-    FindConVar("mp_teams_unbalance_limit").SetInt(g_iLimiteAntes);
-    if (aviso[0])
-        PrintToChatAll("\x04[SKYNET]\x01 %s Os times voltam ao normal.", aviso);
-}
-
-public void OnClientPutInServer(int client)
-{
-    if (!g_bModoBot || !IsFakeClient(client))
+    FindConVar("mp_autoteambalance").SetInt(1);
+    FindConVar("mp_teams_unbalance_limit").SetInt(1);
+    if (!avisar)
         return;
-    char nome[MAX_NAME_LENGTH];
-    GetClientName(client, nome, sizeof(nome));
-    if (StrContains(nome, NOME_BOT) != -1)
-    {
-        g_iBot = client;
-        g_bTemAncora = false;
-    }
+    // todos estavam no vermelho: o jogo embaralha os times e reinicia a rodada (2x2)
+    ServerCommand("mp_scrambleteams");
+    PrintToChatAll("\x04[SKYNET]\x01 %d jogadores! O SKYNET BOT saiu e os times foram divididos. \x03Valendo ranking.",
+        HumanosNosTimes());
 }
 
 public void OnClientDisconnect(int client)
 {
     g_bAuto[client] = false;
-    if (!g_bModoBot)
-        return;
     if (client == g_iBot)
     {
         g_iBot = 0;
-        DesligarBot("O SKYNET BOT saiu do servidor.");
-        return;
+        g_bTemAncora = false;
     }
-    if (IsFakeClient(client))
-        return;
-    int humanos = 0;
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (i != client && IsClientInGame(i) && !IsFakeClient(i))
-            humanos++;
-    }
-    if (humanos == 0)
-        DesligarBot("");
 }
 
 // Com o modo bot ligado, jogador nao entra no azul: vai para o vermelho
@@ -286,11 +299,9 @@ public Action T_Ancorar(Handle timer, any userid)
 // ---------------------------------------------------------------- rebater
 
 // O ponto p esta dentro da area do sopro de quem olha de "olho" na direcao "dir"?
-bool NaCaixa(const float olho[3], const float dir[3], const float p[3])
+bool NaCaixa(const float olho[3], const float dir[3], const float p[3], float lado, float altura)
 {
     float frente = g_cvFrente.FloatValue;
-    float lado = g_cvLado.FloatValue;
-    float altura = g_cvAltura.FloatValue;
     float c0 = olho[0] + dir[0] * frente;
     float c1 = olho[1] + dir[1] * frente;
     float c2 = olho[2] + dir[2] * frente;
@@ -305,11 +316,29 @@ bool SoproPronto(int client)
     return GetEntPropFloat(arma, Prop_Send, "m_flNextSecondaryAttack") <= GetGameTime();
 }
 
-// Se tem foguete para rebater agora, aponta a mira para ele e devolve true
-bool Refletir(int client, float angles[3])
+// O SKYNET BOT nao tem recarga de sopro nem fica sem municao: rebate tambem de perto, em troca rapida
+void RecarregarSopro(int client)
 {
-    if (!SoproPronto(client))
+    int arma = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+    if (arma <= MaxClients || !IsValidEntity(arma) || !HasEntProp(arma, Prop_Send, "m_flNextSecondaryAttack"))
+        return;
+    if (GetEntPropFloat(arma, Prop_Send, "m_flNextSecondaryAttack") > GetGameTime())
+        SetEntPropFloat(arma, Prop_Send, "m_flNextSecondaryAttack", GetGameTime());
+    int tipo = HasEntProp(arma, Prop_Send, "m_iPrimaryAmmoType") ? GetEntProp(arma, Prop_Send, "m_iPrimaryAmmoType") : -1;
+    if (tipo >= 0)
+        SetEntProp(client, Prop_Send, "m_iAmmo", 200, _, tipo);
+}
+
+// Se tem foguete para rebater agora, aponta a mira para ele e devolve true.
+// bot = true: qualquer foguete do outro time vindo na direcao dele conta, e ele sopra assim que o foguete entra na area
+bool Refletir(int client, float angles[3], bool bot = false)
+{
+    if (bot)
+        RecarregarSopro(client);
+    else if (!SoproPronto(client))
         return false;
+    float lado = bot ? 128.0 : g_cvLado.FloatValue;
+    float altura = bot ? 64.0 : g_cvAltura.FloatValue;
     float olho[3];
     GetClientEyePosition(client, olho);
     int equipe = GetClientTeam(client);
@@ -335,7 +364,15 @@ bool Refletir(int client, float angles[3])
                 alvo = TFDB_GetRocketTarget(idx);
         }
         bool meu;
-        if (alvo > 0)
+        if (bot)
+        {
+            // de perto, logo depois de outro jogador rebater, o Dodgeball ainda nao trocou o alvo: olha o time e a direcao
+            if (GetEntProp(ent, Prop_Send, "m_iTeamNum") == equipe)
+                continue;
+            MakeVectorFromPoints(p, olho, ate);
+            meu = (alvo == client) || (d < 600.0 && GetVectorDotProduct(v, ate) > 0.0);
+        }
+        else if (alvo > 0)
             meu = (alvo == client) || (d <= emergencia && GetEntProp(ent, Prop_Send, "m_iTeamNum") != equipe);
         else
         {
@@ -352,10 +389,10 @@ bool Refletir(int client, float angles[3])
         }
         MakeVectorFromPoints(olho, meio, dir);
         NormalizeVector(dir, dir);
-        if (!NaCaixa(olho, dir, p))
+        if (!NaCaixa(olho, dir, p, lado, altura))
             continue;
         float passo = GetVectorLength(v) * dt;
-        if (d > g_cvPerto.FloatValue && d - 2.0 * passo > 60.0)
+        if (!bot && d > g_cvPerto.FloatValue && d - 2.0 * passo > 60.0)
             continue;
         if (d < menor)
         {
@@ -398,7 +435,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
                 if (GetVectorDistance(agora, g_fAncora) > 16.0)
                     TeleportEntity(client, g_fAncora, NULL_VECTOR, parado);
             }
-            if (Refletir(client, angles))
+            if (Refletir(client, angles, true))
                 buttons |= IN_ATTACK2;
         }
         return Plugin_Changed;

@@ -5,13 +5,14 @@
 #define MAX_MAPS 64
 #define MAX_OPTS 5
 #define NUNCA -100000
+#define ESTENDER "__estender__"
 
 public Plugin myinfo =
 {
     name = "SKYNET Map Vote",
     author = "SKYNET GAMING",
-    description = "Votacao do proximo mapa: opcoes escolhidas por hype, tempo sem jogar e tempo fora da votacao",
-    version = "1.2",
+    description = "Votacao do proximo mapa (hype, tempo sem jogar, tempo fora da votacao) + opcao fixa de estender o mapa atual + !rtv + !nominate",
+    version = "1.5",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -28,7 +29,18 @@ int g_VoteCounter;
 bool g_VoteStarted;
 int g_RoundsPlayed;
 Handle g_VoteTimer = null;
-ConVar g_cvVoteDelay, g_cvMaxRounds, g_cvBefore;
+ConVar g_cvVoteDelay, g_cvMaxRounds, g_cvBefore, g_cvExtend;
+bool g_bEstendido;
+ConVar g_cvRtvNeeded, g_cvRtvDelay, g_cvRtvInterval;
+bool g_bRtv[MAXPLAYERS + 1];
+int g_Indicou[MAXPLAYERS + 1] = {-1, ...};   // mapa (indice em g_Map) que cada jogador indicou com !nominate
+float g_fIndicouEm[MAXPLAYERS + 1];
+bool g_Excluir[MAX_MAPS];                     // mapas que o sorteio nao pode repetir (ja entraram por indicacao)
+bool g_bModoRtv;        // a votacao aberta agora veio do !rtv (o mapa troca na hora)
+bool g_bVotoFeito;      // a votacao normal ja escolheu o proximo mapa
+float g_fRtvLiberado;   // GetEngineTime() a partir do qual o !rtv vale
+int g_iLimiteOriginal = -1;
+int g_iRodadasOriginal = -1;
 char g_ConfigFile[PLATFORM_MAX_PATH];
 char g_StateFile[PLATFORM_MAX_PATH];
 int g_Opt[MAX_OPTS];
@@ -49,6 +61,10 @@ public void OnPluginStart()
     g_cvVoteDelay     = CreateConVar("skynet_mapvote_delay", "180", "Segundos depois do inicio da ultima rodada para abrir a votacao", _, true, 30.0);
     g_cvMaxRounds     = FindConVar("mp_maxrounds");
     g_cvBefore        = CreateConVar("skynet_mapvote_before", "180", "Abre a votacao quando faltar este tempo (segundos) para o fim do mapa pelo mp_timelimit. 0 = usa o modo por rodadas", _, true, 0.0);
+    g_cvExtend        = CreateConVar("skynet_mapvote_extend", "10", "Minutos a mais quando a votacao escolhe estender o mapa atual. 0 = sem essa opcao", _, true, 0.0, true, 60.0);
+    g_cvRtvNeeded     = CreateConVar("skynet_rtv_needed", "0.60", "Fracao dos jogadores que precisa digitar !rtv para trocar de mapa", _, true, 0.05, true, 1.0);
+    g_cvRtvDelay      = CreateConVar("skynet_rtv_delay", "60", "Segundos depois do inicio do mapa para liberar o !rtv", _, true, 0.0);
+    g_cvRtvInterval   = CreateConVar("skynet_rtv_interval", "240", "Se a maioria escolher continuar, segundos ate o !rtv valer de novo", _, true, 0.0);
     AutoExecConfig(true, "skynet_mapvote");
 
     BuildPath(Path_SM, g_ConfigFile, sizeof(g_ConfigFile), "configs/skynet_mapvote.txt");
@@ -59,6 +75,9 @@ public void OnPluginStart()
     HookEventEx("teamplay_round_win", Ev_RoundWin, EventHookMode_PostNoCopy);
     HookEventEx("teamplay_round_start", Ev_RoundStart, EventHookMode_PostNoCopy);
 
+    RegConsoleCmd("sm_rtv", Cmd_Rtv, "Vota para trocar de mapa agora");
+    RegConsoleCmd("sm_rockthevote", Cmd_Rtv, "Vota para trocar de mapa agora");
+    RegConsoleCmd("sm_nominate", Cmd_Nominate, "Indica um mapa para a proxima votacao");
     RegAdminCmd("sm_mapvote_status", Cmd_Status, ADMFLAG_CHANGEMAP, "Mostra o hype, o historico e o peso de cada mapa");
     RegAdminCmd("sm_mapvote_now", Cmd_Now, ADMFLAG_CHANGEMAP, "Inicia agora a votacao do proximo mapa");
 }
@@ -164,6 +183,15 @@ public void OnMapStart()
     g_VoteStarted = false;
     g_RoundsPlayed = 0;
     g_VoteTimer = null;
+    g_bEstendido = false;
+    g_bModoRtv = false;
+    g_bVotoFeito = false;
+    for (int c = 1; c <= MaxClients; c++)
+    {
+        g_bRtv[c] = false;
+        g_Indicou[c] = -1;
+    }
+    g_fRtvLiberado = GetEngineTime() + g_cvRtvDelay.FloatValue;
     CreateTimer(5.0, Timer_CheckTimeLeft, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }
 
@@ -171,12 +199,47 @@ public void OnMapStart()
 public Action Timer_CheckTimeLeft(Handle timer)
 {
     int before = g_cvBefore.IntValue;
+    if (before <= 0 && g_bEstendido)
+        before = 180;
     if (g_VoteStarted || before <= 0)
         return Plugin_Continue;
     int timeleft;
     if (GetMapTimeLeft(timeleft) && timeleft > 0 && timeleft <= before)
         StartMapVote();
     return Plugin_Continue;
+}
+
+// O que a extensao mudou volta ao normal no proximo mapa
+public void OnMapEnd()
+{
+    if (g_iLimiteOriginal >= 0)
+        FindConVar("mp_timelimit").SetInt(g_iLimiteOriginal);
+    if (g_iRodadasOriginal >= 0 && g_cvMaxRounds != null)
+        g_cvMaxRounds.SetInt(g_iRodadasOriginal);
+    g_iLimiteOriginal = -1;
+    g_iRodadasOriginal = -1;
+    g_bEstendido = false;
+}
+
+// +N minutos no tempo do mapa; se o mapa acaba por rodadas, +1 rodada. Depois a votacao abre de novo perto do fim.
+void Estender()
+{
+    int minutos = g_cvExtend.IntValue;
+    ConVar limite = FindConVar("mp_timelimit");
+    if (limite.IntValue > 0)
+    {
+        if (g_iLimiteOriginal < 0)
+            g_iLimiteOriginal = limite.IntValue;
+        ExtendMapTimeLimit(minutos * 60);
+    }
+    if (g_cvMaxRounds != null && g_cvMaxRounds.IntValue > 0)
+    {
+        if (g_iRodadasOriginal < 0)
+            g_iRodadasOriginal = g_cvMaxRounds.IntValue;
+        g_cvMaxRounds.SetInt(g_cvMaxRounds.IntValue + 1);
+    }
+    g_bEstendido = true;
+    g_VoteStarted = false;
 }
 
 public void OnConfigsExecuted()
@@ -225,7 +288,7 @@ int BuildOptions(int[] out, int wanted, bool registerVote)
     int poolCount = 0;
     for (int i = 0; i < g_Count; i++)
     {
-        if (g_Hype[i] <= 0 || StrEqual(g_Map[i], cur, false))
+        if (g_Hype[i] <= 0 || g_Excluir[i] || StrEqual(g_Map[i], cur, false))
             continue;
         if (g_MapCounter - g_LastPlayed[i] <= cooldown)
             continue;
@@ -236,7 +299,7 @@ int BuildOptions(int[] out, int wanted, bool registerVote)
     {
         for (int i = 0; i < g_Count; i++)
         {
-            if (g_Hype[i] <= 0 || StrEqual(g_Map[i], cur, false))
+            if (g_Hype[i] <= 0 || g_Excluir[i] || StrEqual(g_Map[i], cur, false))
                 continue;
             bool already = false;
             for (int k = 0; k < poolCount; k++)
@@ -348,7 +411,7 @@ void StartMapVote()
     int wanted = g_cvOptions.IntValue;
     if (wanted > MAX_OPTS)
         wanted = MAX_OPTS;
-    g_OptCount = BuildOptions(g_Opt, wanted, true);
+    g_OptCount = MontarOpcoes(g_Opt, wanted);
     if (g_OptCount == 0)
         return;
     if (g_OptCount == 1 || CountHumans() == 0 || IsVoteInProgress())
@@ -358,12 +421,24 @@ void StartMapVote()
     }
 
     Menu menu = new Menu(Handler_Vote, MENU_ACTIONS_ALL);
-    menu.SetTitle("Vote no proximo mapa:");
+    menu.SetTitle(g_bModoRtv ? "Trocar de mapa agora (RTV):" : "Vote no proximo mapa:");
     for (int k = 0; k < g_OptCount; k++)
         menu.AddItem(g_Map[g_Opt[k]], g_Map[g_Opt[k]]);
+    int opcoes = g_OptCount;
+    if (g_bModoRtv || g_cvExtend.IntValue > 0)
+    {
+        char atual[PLATFORM_MAX_PATH], texto[PLATFORM_MAX_PATH + 32];
+        GetCurrentMap(atual, sizeof(atual));
+        if (g_bModoRtv)
+            Format(texto, sizeof(texto), "Continuar em %s", atual);
+        else
+            Format(texto, sizeof(texto), "Estender %s (+%d min)", atual, g_cvExtend.IntValue);
+        menu.AddItem(ESTENDER, texto);
+        opcoes++;
+    }
     menu.ExitButton = false;
     menu.DisplayVoteToAll(g_cvVoteTime.IntValue);
-    PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 Vote no próximo mapa! Use as teclas \x0700E5FF1\x01, \x0700E5FF2\x01 ou \x0700E5FF3\x01.");
+    PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 Vote no próximo mapa! Use as teclas \x0700E5FF1\x01 a \x0700E5FF%d\x01.", opcoes);
 }
 
 public int Handler_Vote(Menu menu, MenuAction action, int param1, int param2)
@@ -378,8 +453,33 @@ public int Handler_Vote(Menu menu, MenuAction action, int param1, int param2)
         menu.GetItem(param1, map, sizeof(map));
         int votes, total;
         GetMenuVoteInfo(param2, votes, total);
+        if (StrEqual(map, ESTENDER) && g_bModoRtv)
+        {
+            FimRtv(true);
+            PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 A maioria quer \x0700E5FFcontinuar neste mapa\x01 (%d de %d votos).", votes, total);
+            return 0;
+        }
+        if (StrEqual(map, ESTENDER))
+        {
+            Estender();
+            PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 O mapa foi \x0700E5FFestendido em %d minutos\x01 (%d de %d votos). Perto do fim tem votação de novo.",
+                g_cvExtend.IntValue, votes, total);
+            return 0;
+        }
         SetNextMap(map);
+        if (g_bModoRtv)
+        {
+            PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 Trocando para \x0700E5FF%s\x01 em 5 segundos (%d de %d votos).", map, votes, total);
+            CreateTimer(5.0, T_Trocar, _, TIMER_FLAG_NO_MAPCHANGE);
+            return 0;
+        }
+        g_bVotoFeito = true;
         PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 Próximo mapa: \x0700E5FF%s\x01 (%d de %d votos). Ele começa quando este mapa terminar.", map, votes, total);
+    }
+    else if (action == MenuAction_VoteCancel && g_bModoRtv)
+    {
+        FimRtv(true);
+        PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 Ninguém votou: o mapa continua.");
     }
     else if (action == MenuAction_VoteCancel && g_OptCount > 0)
     {
@@ -413,4 +513,312 @@ public Action Cmd_Now(int client, int args)
     g_VoteStarted = false;
     StartMapVote();
     return Plugin_Handled;
+}
+
+// ---------------------------------------------------------------- !rtv
+
+int RtvPrecisa()
+{
+    int n = RoundToCeil(float(CountHumans()) * g_cvRtvNeeded.FloatValue);
+    return n < 1 ? 1 : n;
+}
+
+int RtvVotos()
+{
+    int n = 0;
+    for (int i = 1; i <= MaxClients; i++)
+        if (g_bRtv[i] && IsClientInGame(i) && !IsFakeClient(i))
+            n++;
+    return n;
+}
+
+// Depois de uma votacao de RTV: zera os pedidos; se continuou, o !rtv so volta depois de um tempo
+void FimRtv(bool continuou)
+{
+    g_bModoRtv = false;
+    for (int i = 1; i <= MaxClients; i++)
+        g_bRtv[i] = false;
+    if (continuou)
+    {
+        g_VoteStarted = g_bVotoFeito;
+        g_fRtvLiberado = GetEngineTime() + g_cvRtvInterval.FloatValue;
+    }
+}
+
+public Action Cmd_Rtv(int client, int args)
+{
+    if (client < 1 || !IsClientInGame(client) || IsFakeClient(client))
+        return Plugin_Handled;
+    Rtv(client);
+    return Plugin_Handled;
+}
+
+public void OnClientSayCommand_Post(int client, const char[] command, const char[] texto)
+{
+    if (client > 0 && (StrEqual(texto, "rtv", false) || StrEqual(texto, "rockthevote", false)))
+        Rtv(client);
+    else if (client > 0 && StrEqual(texto, "nominate", false))
+        MenuIndicar(client, "");
+}
+
+void Rtv(int client)
+{
+    if (g_bModoRtv)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 A votação para trocar de mapa já está aberta.");
+        return;
+    }
+    float falta = g_fRtvLiberado - GetEngineTime();
+    if (falta > 0.0)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 O \x0700E5FF!rtv\x01 libera em %d segundos.", RoundToCeil(falta));
+        return;
+    }
+    if (g_bRtv[client])
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 Você já pediu para trocar de mapa (%d de %d).", RtvVotos(), RtvPrecisa());
+        return;
+    }
+    g_bRtv[client] = true;
+    PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 \x0700E5FF%N\x01 quer trocar de mapa (%d de %d). Digite \x0700E5FF!rtv\x01 para trocar também.",
+        client, RtvVotos(), RtvPrecisa());
+    ChecarRtv();
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+    g_bRtv[client] = false;
+    g_Indicou[client] = -1;
+    if (!g_bModoRtv && RtvVotos() > 0)
+        ChecarRtv();
+}
+
+void ChecarRtv()
+{
+    if (g_bModoRtv || RtvVotos() < RtvPrecisa())
+        return;
+    if (IsVoteInProgress())
+    {
+        PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 A maioria quer trocar de mapa: a votação abre assim que a atual terminar.");
+        CreateTimer(3.0, T_TentarRtv, _, TIMER_FLAG_NO_MAPCHANGE);
+        return;
+    }
+    // a votacao normal ja escolheu o proximo mapa: vai direto para ele
+    char next[PLATFORM_MAX_PATH];
+    if (g_bVotoFeito && GetNextMap(next, sizeof(next)))
+    {
+        g_bModoRtv = true;
+        PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 A maioria quer trocar: indo para \x0700E5FF%s\x01 em 5 segundos.", next);
+        CreateTimer(5.0, T_Trocar, _, TIMER_FLAG_NO_MAPCHANGE);
+        return;
+    }
+    g_bModoRtv = true;
+    g_VoteStarted = false;
+    StartMapVote();
+    if (!IsVoteInProgress())   // nao abriu (ex.: so um mapa possivel): troca para o que ficou como proximo
+        CreateTimer(5.0, T_Trocar, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action T_TentarRtv(Handle timer)
+{
+    if (IsVoteInProgress())
+    {
+        CreateTimer(3.0, T_TentarRtv, _, TIMER_FLAG_NO_MAPCHANGE);
+        return Plugin_Stop;
+    }
+    ChecarRtv();
+    return Plugin_Stop;
+}
+
+public Action T_Trocar(Handle timer)
+{
+    char next[PLATFORM_MAX_PATH];
+    if (GetNextMap(next, sizeof(next)))
+        ForceChangeLevel(next, "RTV");
+    return Plugin_Stop;
+}
+
+// ---------------------------------------------------------------- !nominate
+
+// Opcoes da votacao: primeiro os mapas indicados (por ordem de chegada), o resto pelo sorteio de sempre
+int MontarOpcoes(int[] out, int wanted)
+{
+    int n = 0;
+    int ordem[MAXPLAYERS + 1];
+    int k = 0;
+    for (int c = 1; c <= MaxClients; c++)
+        if (g_Indicou[c] >= 0 && IsClientInGame(c))
+            ordem[k++] = c;
+    SortCustom1D(ordem, k, PorHora);
+    for (int j = 0; j < k && n < wanted; j++)
+    {
+        int m = g_Indicou[ordem[j]];
+        if (m >= g_Count || g_Excluir[m])
+            continue;
+        g_Excluir[m] = true;
+        out[n++] = m;
+    }
+    int resto[MAX_OPTS];
+    int r = BuildOptions(resto, wanted - n, false);
+    for (int j = 0; j < r; j++)
+        out[n++] = resto[j];
+    for (int i = 0; i < MAX_MAPS; i++)
+        g_Excluir[i] = false;
+    if (n > 0)
+    {
+        g_VoteCounter++;
+        for (int j = 0; j < n; j++)
+            g_LastVoted[out[j]] = g_VoteCounter;
+        MV_SaveState();
+    }
+    return n;
+}
+
+public int PorHora(int a, int b, const int[] lista, Handle h)
+{
+    if (g_fIndicouEm[a] < g_fIndicouEm[b])
+        return -1;
+    return g_fIndicouEm[a] > g_fIndicouEm[b] ? 1 : 0;
+}
+
+public int PorNome(int a, int b, const int[] lista, Handle h)
+{
+    return strcmp(g_Map[a], g_Map[b], false);
+}
+
+// 0 = pode indicar; 1 = mapa atual; 2 = jogado ha pouco; 3 = fora da rotacao
+int Situacao(int i)
+{
+    char cur[PLATFORM_MAX_PATH];
+    GetCurrentMap(cur, sizeof(cur));
+    if (StrEqual(g_Map[i], cur, false))
+        return 1;
+    if (g_Hype[i] <= 0)
+        return 3;
+    if (g_MapCounter - g_LastPlayed[i] <= g_cvCooldown.IntValue)
+        return 2;
+    return 0;
+}
+
+int Indicacoes(int i)
+{
+    int n = 0;
+    for (int c = 1; c <= MaxClients; c++)
+        if (g_Indicou[c] == i && IsClientInGame(c))
+            n++;
+    return n;
+}
+
+bool PodeIndicarAgora(int client)
+{
+    if (g_bModoRtv || (g_VoteStarted && IsVoteInProgress()))
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 A votação já está aberta: vote nela.");
+        return false;
+    }
+    if (g_bVotoFeito)
+    {
+        char next[PLATFORM_MAX_PATH];
+        GetNextMap(next, sizeof(next));
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 A votação deste mapa já aconteceu: o próximo é \x0700E5FF%s\x01.", next);
+        return false;
+    }
+    return true;
+}
+
+public Action Cmd_Nominate(int client, int args)
+{
+    if (client < 1 || !IsClientInGame(client) || IsFakeClient(client))
+        return Plugin_Handled;
+    char busca[64];
+    GetCmdArgString(busca, sizeof(busca));
+    TrimString(busca);
+    StripQuotes(busca);
+    MenuIndicar(client, busca);
+    return Plugin_Handled;
+}
+
+void MenuIndicar(int client, const char[] busca)
+{
+    if (!PodeIndicarAgora(client))
+        return;
+    int lista[MAX_MAPS];
+    int n = 0;
+    for (int i = 0; i < g_Count; i++)
+    {
+        int sit = Situacao(i);
+        if (sit != 1 && sit != 3 && (busca[0] == '\0' || StrContains(g_Map[i], busca, false) != -1))
+            lista[n++] = i;
+    }
+    if (n == 0)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 Nenhum mapa com \x0700E5FF%s\x01. Digite só \x0700E5FF!nominate\x01 para ver a lista.", busca);
+        return;
+    }
+    if (n == 1 && busca[0] != '\0')
+    {
+        Indicar(client, lista[0]);
+        return;
+    }
+    SortCustom1D(lista, n, PorNome);
+    Menu menu = new Menu(H_Indicar);
+    menu.SetTitle("Indique um mapa para a votação\n(os %d primeiros indicados entram)", g_cvOptions.IntValue);
+    for (int j = 0; j < n; j++)
+    {
+        int i = lista[j];
+        char info[8], texto[PLATFORM_MAX_PATH + 32];
+        IntToString(i, info, sizeof(info));
+        if (Situacao(i) == 2)
+            Format(texto, sizeof(texto), "%s (jogado há pouco)", g_Map[i]);
+        else if (g_Indicou[client] == i)
+            Format(texto, sizeof(texto), "%s (sua indicação)", g_Map[i]);
+        else if (Indicacoes(i) > 0)
+            Format(texto, sizeof(texto), "%s (indicado)", g_Map[i]);
+        else
+            strcopy(texto, sizeof(texto), g_Map[i]);
+        menu.AddItem(info, texto, Situacao(i) == 2 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+    }
+    menu.Display(client, 30);
+}
+
+public int H_Indicar(Menu menu, MenuAction action, int client, int item)
+{
+    if (action == MenuAction_End)
+        delete menu;
+    else if (action == MenuAction_Select)
+    {
+        char info[8];
+        menu.GetItem(item, info, sizeof(info));
+        Indicar(client, StringToInt(info));
+    }
+    return 0;
+}
+
+void Indicar(int client, int i)
+{
+    if (!PodeIndicarAgora(client) || i < 0 || i >= g_Count)
+        return;
+    int sit = Situacao(i);
+    if (sit == 1)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 Esse é o mapa atual: para ficar nele, vote em \x0700E5FFEstender\x01.");
+        return;
+    }
+    if (sit == 2)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 \x0700E5FF%s\x01 foi jogado há pouco e está fora da votação por enquanto.", g_Map[i]);
+        return;
+    }
+    if (sit == 3)
+        return;
+    if (g_Indicou[client] == i)
+    {
+        PrintToChat(client, "\x07FFD700[SKYNET GAMING]\x01 Você já indicou \x0700E5FF%s\x01.", g_Map[i]);
+        return;
+    }
+    bool trocou = g_Indicou[client] >= 0;
+    g_Indicou[client] = i;
+    g_fIndicouEm[client] = GetGameTime();
+    PrintToChatAll("\x07FFD700[SKYNET GAMING]\x01 \x0700E5FF%N\x01 %s \x0700E5FF%s\x01 para a votação. Use \x0700E5FF!nominate\x01 para indicar o seu.",
+        client, trocou ? "trocou a indicação para" : "indicou", g_Map[i]);
 }

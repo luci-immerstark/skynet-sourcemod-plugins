@@ -12,7 +12,7 @@ public Plugin myinfo =
     name = "SKYNET Hordas L4D2",
     author = "SKYNET GAMING",
     description = "Hordas de zumbis comuns proporcionais ao numero de sobreviventes vivos",
-    version = "1.0",
+    version = "1.1",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -22,6 +22,7 @@ static const int g_iBase[] = { 30, 10, 30, 20, 50 };
 
 ConVar g_cvFator;
 ConVar g_cvMax;
+ConVar g_cvMinimo;
 ConVar g_hJogo[sizeof(g_sCvar)];
 int g_iVivos = -1;
 
@@ -29,11 +30,13 @@ public void OnPluginStart()
 {
     g_cvFator = CreateConVar("skynet_hordas_fator", "0.10", "Quanto cada sobrevivente vivo acima de 4 aumenta as hordas (0.10 = +10% por sobrevivente)", _, true, 0.0, true, 1.0);
     g_cvMax   = CreateConVar("skynet_hordas_max", "100", "Teto de cada valor (zumbis comuns ao mesmo tempo e tamanho das hordas)", _, true, 30.0, true, 200.0);
+    g_cvMinimo = CreateConVar("skynet_hordas_minimo", "0.6", "Fator minimo das hordas (1.0 = tamanho original do jogo, feito para 4 sobreviventes)", _, true, 0.3, true, 3.0);
     AutoExecConfig(true, "skynet_hordas_l4d2");
     for (int i = 0; i < sizeof(g_sCvar); i++)
         g_hJogo[i] = FindConVar(g_sCvar[i]);
     g_cvFator.AddChangeHook(OnAjusteMudou);
     g_cvMax.AddChangeHook(OnAjusteMudou);
+    g_cvMinimo.AddChangeHook(OnAjusteMudou);
     RegAdminCmd("sm_hordas", Cmd_Hordas, ADMFLAG_GENERIC, "Mostra o tamanho atual das hordas");
     CreateTimer(3.0, T_Conferir, _, TIMER_REPEAT);
 }
@@ -79,7 +82,8 @@ int ContarVivos()
 float Fator(int vivos)
 {
     float f = 1.0 + g_cvFator.FloatValue * float(vivos - 4);
-    return f < 0.6 ? 0.6 : f;
+    float m = g_cvMinimo.FloatValue;
+    return f < m ? m : f;
 }
 
 int Valor(int i, int vivos)

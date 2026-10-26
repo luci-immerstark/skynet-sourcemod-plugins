@@ -6,10 +6,15 @@ public Plugin myinfo =
 {
     name = "SKYNET Admin Tag",
     author = "SKYNET GAMING",
-    description = "Tag [ADM] no chat para os administradores",
-    version = "1.1",
+    description = "Tag [ADM] (dourada) e [MOD] (azul) no chat",
+    version = "1.2",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
+
+// [ADM]: quem pode banir (ou e root). [MOD]: quem tem o acesso basico de admin mas nao bane (grupo Moderador).
+//   Da pra mudar quem recebe cada tag com overrides em admin_overrides.cfg: "sm_tag_adm" e "sm_tag_mod".
+#define COR_ADM "FFD700"
+#define COR_MOD "4FC3F7"
 
 public void OnPluginStart()
 {
@@ -24,7 +29,8 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     int author = msg.ReadByte();
     if (author < 1 || author > MaxClients || !IsClientInGame(author) || IsFakeClient(author))
         return Plugin_Continue;
-    if (!CheckCommandAccess(author, "sm_tag_adm", ADMFLAG_GENERIC, true))
+    bool adm = CheckCommandAccess(author, "sm_tag_adm", ADMFLAG_BAN, true);
+    if (!adm && !CheckCommandAccess(author, "sm_tag_mod", ADMFLAG_GENERIC, true))
         return Plugin_Continue;
 
     bool chat = msg.ReadByte() != 0;
@@ -40,6 +46,7 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     DataPack dp = new DataPack();
     dp.WriteCell(GetClientUserId(author));
     dp.WriteCell(chat);
+    dp.WriteCell(adm);
     dp.WriteString(fmt);
     dp.WriteString(name);
     dp.WriteString(text);
@@ -67,6 +74,7 @@ public void Frame_Resend(DataPack dp)
     dp.Reset();
     int author = GetClientOfUserId(dp.ReadCell());
     bool chat = view_as<bool>(dp.ReadCell());
+    bool adm = view_as<bool>(dp.ReadCell());
     char fmt[64], name[MAX_NAME_LENGTH], text[256];
     dp.ReadString(fmt, sizeof(fmt));
     dp.ReadString(name, sizeof(name));
@@ -86,7 +94,7 @@ public void Frame_Resend(DataPack dp)
 
     char pre[32], linha[320];
     Prefixo(fmt, pre, sizeof(pre));
-    Format(linha, sizeof(linha), "\x01%s\x07FFD700[ADM] \x03%s\x01 :  %s", pre, name, text);
+    Format(linha, sizeof(linha), "\x01%s\x07%s[%s] \x03%s\x01 :  %s", pre, adm ? COR_ADM : COR_MOD, adm ? "ADM" : "MOD", name, text);
 
     BfWrite bf = UserMessageToBfWrite(StartMessage("SayText2", clients, total, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
     bf.WriteByte(author);
