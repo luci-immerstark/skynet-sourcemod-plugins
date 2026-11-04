@@ -12,7 +12,7 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// Edite esta lista com os nomes que quiser. / Edit this list with any names you like.
+// Edit this list with any names you like.
 static const char g_Nomes[][] =
 {
     "Bot Alpha",
@@ -88,7 +88,7 @@ bool NomeEmUso(const char[] nome, int ignorar)
     return false;
 }
 
-// Esconde do chat o aviso "Server cvar 'tf_bot_count' changed", que aparece a cada entrada e saida de bot
+// Hides from chat the "Server cvar 'tf_bot_count' changed" notice, which shows up every time a bot joins or leaves
 public Action Ev_EsconderCvar(Event event, const char[] name, bool dontBroadcast)
 {
     char cvar[64];

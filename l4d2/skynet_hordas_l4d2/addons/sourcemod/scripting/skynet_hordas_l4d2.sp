@@ -3,9 +3,9 @@
 
 #include <sourcemod>
 
-// SKYNET: o jogo foi feito para 4 sobreviventes e nao aumenta as hordas de zumbis comuns sozinho.
-// Este plugin ajusta as hordas pelo numero de sobreviventes vivos (os especiais ficam com o Infected Bots).
-//   fator = 1 + skynet_hordas_fator x (vivos - 4), nunca abaixo de 0.6; cada valor fica limitado a skynet_hordas_max
+// SKYNET: the game was made for 4 survivors and does not scale the common infected hordes by itself.
+// This plugin adjusts the hordes by the number of living survivors (the specials stay with Infected Bots).
+//   factor = 1 + skynet_hordas_fator x (alive - 4), never below 0.6; each value is capped at skynet_hordas_max
 
 public Plugin myinfo =
 {
@@ -16,7 +16,7 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// cvars do jogo e os valores originais (feitos para 4 sobreviventes)
+// game cvars and their original values (made for 4 survivors)
 static const char g_sCvar[][] = { "z_common_limit", "z_mob_spawn_min_size", "z_mob_spawn_max_size", "z_mob_spawn_finale_size", "z_mega_mob_size" };
 static const int g_iBase[] = { 30, 10, 30, 20, 50 };
 
@@ -48,7 +48,7 @@ public void OnPluginEnd()
             g_hJogo[i].IntValue = g_iBase[i];
 }
 
-// o server.cfg e a troca de mapa podem voltar os valores: aplica de novo
+// server.cfg and map changes can reset the values: apply them again
 public void OnConfigsExecuted()
 {
     g_iVivos = -1;

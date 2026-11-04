@@ -50,7 +50,7 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     return Plugin_Handled;
 }
 
-// Mesmo prefixo que o jogo usaria (morto, time, espectador)
+// Same prefix the game would use (dead, team, spectator)
 void Prefixo(const char[] fmt, char[] pre, int len)
 {
     bool morto = StrContains(fmt, "Dead") != -1;

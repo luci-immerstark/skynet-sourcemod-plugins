@@ -2,7 +2,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-// Fornecida pelo Point System API (declarada aqui para nao depender do include na compilacao)
+// Provided by Point System API (declared here so compiling does not depend on the include)
 native float PSAPI_GetPoints(int client);
 
 public Plugin myinfo =
@@ -27,7 +27,7 @@ int Saldo(int client)
     return RoundToFloor(PSAPI_GetPoints(client));
 }
 
-// Copia o que vem depois do prefixo, sem os codigos de cor do plugin original
+// Copies what comes after the prefix, without the original plugin's color codes
 void Resto(const char[] texto, int inicio, char[] saida, int tam)
 {
     int j = 0;
@@ -81,7 +81,7 @@ void Traduzir(const char[] m, char[] saida, int tam)
         Resto(m, 0, saida, tam);
 }
 
-// Chamado pelo Point System API antes de somar os pontos
+// Called by Point System API before adding the points
 public void PointSystemAPI_OnGainPoints(int client, float &fPoints, const char[] reason)
 {
     if (client < 1 || client > MaxClients || !IsClientInGame(client) || IsFakeClient(client) || reason[0] == '\0')
@@ -93,7 +93,7 @@ public void PointSystemAPI_OnGainPoints(int client, float &fPoints, const char[]
     RequestFrame(Frame_Ganho, dp);
 }
 
-// Um instante depois, quando o saldo ja foi atualizado
+// A moment later, once the balance has been updated
 public void Frame_Ganho(DataPack dp)
 {
     dp.Reset();
@@ -114,7 +114,7 @@ public void Frame_Ganho(DataPack dp)
         PrintToChat(client, "\x04[PONTOS]\x01 %s \x05+%d", texto, pontos);
 }
 
-// Chamado pelo Point System API quando uma compra e concluida
+// Called by Point System API when a purchase is completed
 public Action PointSystemAPI_OnBuyProductPost(int buyer, const char[] sInfo, const char[] sAliases, const char[] sName, int target, float fCost, float fDelay, float fCooldown)
 {
     if (buyer < 1 || buyer > MaxClients || !IsClientInGame(buyer) || IsFakeClient(buyer))

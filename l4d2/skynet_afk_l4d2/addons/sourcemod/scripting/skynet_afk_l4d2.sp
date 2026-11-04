@@ -12,9 +12,9 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// Com o "Jogo com Ausentes" a partida nao acaba mais quando todo mundo fica ausente.
-// Este plugin expulsa quem passa do tempo sem apertar nada nem mexer o mouse (avisando 1 minuto antes).
-// Sobrevivente morto esperando resgate nao conta como ausente.
+// With "Game with Idle Players" the match no longer ends when everyone goes idle.
+// This plugin kicks whoever goes past the time limit without pressing anything or moving the mouse (with a 1-minute warning).
+// A dead survivor waiting to be rescued does not count as idle.
 
 ConVar g_cvMinutos;
 ConVar g_cvImuneAdmin;
@@ -38,7 +38,7 @@ void Ativo(int client)
     g_bAvisado[client] = false;
 }
 
-// troca de mapa: ninguem envia comandos durante o carregamento
+// map change: nobody sends commands while loading
 public void OnMapStart()
 {
     for (int i = 1; i <= MaxClients; i++)

@@ -1,8 +1,7 @@
-# Gera a lista de taunts do SKYNET Taunts a partir do items_game.txt do proprio TF2.
 # Builds the SKYNET Taunts list from TF2's own items_game.txt.
-# Uso / Usage:
-#   python3 gerar_lista_taunts.py <servidor>/tf/scripts/items/items_game.txt <servidor>/tf/addons/sourcemod/configs/skynet_taunts.txt
-# Depois / Then: sm_taunts_reload
+# Usage:
+#   python3 gerar_lista_taunts.py <server>/tf/scripts/items/items_game.txt <server>/tf/addons/sourcemod/configs/skynet_taunts.txt
+# Then: sm_taunts_reload
 import re, sys
 texto = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 tok = re.compile(r'"((?:[^"\\]|\\.)*)"|([{}])|//[^\n]*')

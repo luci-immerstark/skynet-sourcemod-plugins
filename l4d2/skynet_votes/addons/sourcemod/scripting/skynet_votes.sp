@@ -52,7 +52,7 @@ public Action Cmd_CallVote(int client, const char[] command, int argc)
     if (Liberada(issue))
         return Plugin_Continue;
 
-    // aviso no meio da tela (o menu de votacao cobre o chat) e no chat
+    // notice in the middle of the screen (the vote menu covers the chat) and in chat
     if (admin)
     {
         PrintCenterText(client, "Votações pelo menu estão desligadas: use o !admin");

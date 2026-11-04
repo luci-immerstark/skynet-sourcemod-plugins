@@ -3,9 +3,9 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define FLAG_IGNORE_USE 32768   // porta ignora o botao de usar dos jogadores
+#define FLAG_IGNORE_USE 32768   // door ignores the players' use button
 
-// Fornecidas pelo Left 4 DHooks (declaradas aqui para nao depender do include na compilacao)
+// Provided by Left 4 DHooks (declared here so compiling does not depend on the include)
 native int L4D_GetCheckpointFirst();
 native int L4D_GetCheckpointLast();
 
@@ -30,7 +30,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     return APLRes_Success;
 }
 
-// 1 = porta do abrigo inicial, 2 = porta do abrigo final, 0 = nao sei
+// 1 = starting saferoom door, 2 = ending saferoom door, 0 = unknown
 int TipoDaPorta(int porta)
 {
     if (GetFeatureStatus(FeatureType_Native, "L4D_GetCheckpointFirst") == FeatureStatus_Available)
@@ -40,7 +40,7 @@ int TipoDaPorta(int porta)
         if (porta == L4D_GetCheckpointLast())
             return 2;
     }
-    // Reserva: pelo modelo (01 = saida do abrigo inicial, 02 = entrada do abrigo final)
+    // Fallback: by model (01 = starting saferoom exit, 02 = ending saferoom entrance)
     char model[96];
     GetEntPropString(porta, Prop_Data, "m_ModelName", model, sizeof(model));
     if (StrContains(model, "checkpoint_door_01") != -1 || StrContains(model, "checkpoint_door_-01") != -1)
@@ -76,7 +76,7 @@ public void Ev_RoundStart(Event event, const char[] name, bool dontBroadcast)
     Zerar();
 }
 
-// Porta de abrigo mais perto do jogador que acabou de usar uma
+// Saferoom door closest to the player who just used one
 int PortaMaisProxima(int client)
 {
     float pos[3], dpos[3];
@@ -150,7 +150,7 @@ public void Ev_Door(Event event, const char[] name, bool dontBroadcast)
     }
     else if (travada > MaxClients && porta == travada)
     {
-        // Fechou mesmo travada: abre de novo
+        // Closed even while locked: open it again
         AcceptEntityInput(porta, "Open");
     }
 }

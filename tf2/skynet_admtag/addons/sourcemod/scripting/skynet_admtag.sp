@@ -11,8 +11,8 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// [ADM]: quem pode banir (ou e root). [MOD]: quem tem o acesso basico de admin mas nao bane (grupo Moderador).
-//   Da pra mudar quem recebe cada tag com overrides em admin_overrides.cfg: "sm_tag_adm" e "sm_tag_mod".
+// [ADM]: whoever can ban (or is root). [MOD]: whoever has basic admin access but cannot ban (Moderator group).
+//   You can change who gets each tag with overrides in admin_overrides.cfg: "sm_tag_adm" and "sm_tag_mod".
 #define COR_ADM "FFD700"
 #define COR_MOD "4FC3F7"
 
@@ -57,7 +57,7 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     return Plugin_Handled;
 }
 
-// Mesmo prefixo que o jogo usaria (morto, time, espectador, coach)
+// Same prefix the game would use (dead, team, spectator, coach)
 void Prefixo(const char[] fmt, char[] pre, int len)
 {
     if (StrContains(fmt, "Team_Dead") != -1)     strcopy(pre, len, "*DEAD*(TEAM) ");

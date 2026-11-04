@@ -18,7 +18,7 @@ bool g_Robot[MAXPLAYERS + 1];
 float g_Next[MAXPLAYERS + 1];
 ConVar g_cvEnabled, g_cvSounds, g_cvCooldown;
 
-// Indice = numero da classe no TF2 (1 = Scout ... 9 = Engineer)
+// Index = TF2 class number (1 = Scout ... 9 = Engineer)
 static const char g_ModelName[][] = { "", "scout", "sniper", "soldier", "demo", "medic", "heavy", "pyro", "spy", "engineer" };
 static const char g_VoiceName[][] = { "", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer" };
 
@@ -141,7 +141,7 @@ public Action Cmd_Robot(int client, int args)
     return Plugin_Handled;
 }
 
-// Reaplica o modelo ao nascer e ao trocar de classe
+// Reapplies the model on spawn and on class change
 public void Ev_Spawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -151,7 +151,7 @@ public void Ev_Spawn(Event event, const char[] name, bool dontBroadcast)
         ApplyRobot(client);
 }
 
-// Troca a voz e os passos dos robos pelos sons do Mann vs. Machine
+// Replaces the robots' voice and footsteps with the Mann vs. Machine sounds
 public Action Hook_Sound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
     if (entity < 1 || entity > MaxClients || !g_Robot[entity] || !g_cvSounds.BoolValue || !IsClientInGame(entity))
@@ -179,7 +179,7 @@ public Action Hook_Sound(int clients[MAXPLAYERS], int &numClients, char sample[P
         return Plugin_Continue;
     ReplaceString(novo, sizeof(novo), ".wav", ".mp3", false);
 
-    // So troca se a fala de robo existir no jogo; senao, mantem a fala normal
+    // Only switches if the robot voice line exists in the game; otherwise keeps the normal line
     char arquivo[PLATFORM_MAX_PATH];
     FormatEx(arquivo, sizeof(arquivo), "sound/%s", novo);
     if (!FileExists(arquivo, true))

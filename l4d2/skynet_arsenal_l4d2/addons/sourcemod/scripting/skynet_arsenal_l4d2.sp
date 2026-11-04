@@ -3,27 +3,27 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-// Arsenal no abrigo: no inicio de cada capitulo coloca no abrigo inicial
-// todas as armas de fogo do jogo (cada uma pode ser pega varias vezes)
-// e todas as armas corpo a corpo disponiveis no mapa.
+// Saferoom arsenal: at the start of each chapter, places in the starting saferoom
+// every firearm in the game (each one can be picked up many times)
+// and every melee weapon available on the map.
 
 #define PLUGIN_VERSION  "1.0"
-#define GRADE_PASSO     34.0     // distancia entre uma arma e outra
-#define GRADE_MEIA      6        // grade de 13 x 13 pontos em volta do jogador
+#define GRADE_PASSO     34.0     // distance between one weapon and the next
+#define GRADE_MEIA      6        // 13 x 13 grid of points around the player
 #define RAIO_MAX        210.0
 #define ALTURA_OLHO     48.0
 #define MAX_PONTOS      180
 #define MAX_CRIADOS     256
 #define MAX_MELEE       32
 #define LIMITE_EDICTS   1900
-#define DIST_PORTA      90.0     // nada perto da porta do abrigo (para nao travar a porta)
+#define DIST_PORTA      90.0     // nothing near the saferoom door (so the door does not get stuck)
 #define MAX_PORTAS      16
 
-// Fornecidas pelo Left 4 DHooks (opcionais; o plugin funciona sem elas)
+// Provided by Left 4 DHooks (optional; the plugin works without them)
 native bool L4D_IsPositionInFirstCheckpoint(float vecPos[3]);
 native bool L4D_HasAnySurvivorLeftSafeArea();
 
-// Armas de fogo: id interno do jogo, modelo, nome da entidade, grupo
+// Firearms: game internal id, model, entity name, group
 // grupo 0 = normal, 1 = Counter-Strike (MP5, SG552, Scout, AWP), 2 = pistola
 static const int g_iArmaId[] = { 2, 7, 33, 3, 8, 4, 11, 5, 26, 9, 34, 6, 10, 36, 35, 32, 1 };
 
@@ -59,21 +59,21 @@ static const char g_sArmaClasse[][] =
 
 static const int g_iArmaGrupo[] = { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 2, 2 };
 
-// Especiais: sao itens soltos (1 unidade cada por padrao)
+// Specials: loose items (1 of each by default)
 static const char g_sEspecial[][] = { "weapon_rifle_m60", "weapon_grenade_launcher", "weapon_chainsaw" };
 
 ConVar g_cvEnable, g_cvQtd, g_cvCss, g_cvPistolas, g_cvMelee, g_cvEspeciais, g_cvAviso;
 
 char g_sLog[PLATFORM_MAX_PATH];
-bool g_bFeito;          // arsenal ja montado nesta rodada
-bool g_bSaiu;           // alguem ja saiu da area inicial
+bool g_bFeito;          // arsenal already set up this round
+bool g_bSaiu;           // someone has already left the starting area
 int g_iTentativas;
 Handle g_hTimer;
 
 int g_iCriados[MAX_CRIADOS];
 int g_iNumCriados;
 
-bool g_bUsarAbrigo;     // validar pontos com o Left 4 DHooks (dentro do abrigo)
+bool g_bUsarAbrigo;     // validate points with Left 4 DHooks (inside the saferoom)
 
 float g_vPortas[MAX_PORTAS][3];
 int g_iNumPortas;
@@ -128,8 +128,8 @@ public void OnMapStart()
     for (int i = 0; i < sizeof(g_sArmaModelo); i++)
         PrecacheModel(g_sArmaModelo[i], true);
 
-    // Criar e remover uma unidade carrega a arma por completo (modelos e script)
-    // antes de qualquer jogador entrar. Necessario para as armas do CS e especiais.
+    // Creating and removing one unit fully loads the weapon (models and script)
+    // before any player joins. Needed for the CS weapons and the specials.
     for (int i = 0; i < sizeof(g_sArmaClasse); i++)
     {
         if (g_iArmaGrupo[i] == 1)
@@ -184,7 +184,7 @@ public void Ev_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         CreateTimer(3.0, T_AvisarCliente, userid, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-// Jogador que chega depois e assume um sobrevivente controlado por bot
+// Player who arrives later and takes over a bot-controlled survivor
 public void Ev_AssumiuBot(Event event, const char[] name, bool dontBroadcast)
 {
     if (g_bFeito && !g_bSaiu)
@@ -230,7 +230,7 @@ public Action T_Tentar(Handle timer)
     }
 
     g_iTentativas++;
-    if (g_iTentativas < 4)      // espera os sobreviventes aparecerem no abrigo
+    if (g_iTentativas < 4)      // waits for the survivors to appear in the saferoom
         return Plugin_Continue;
 
     if (GetFeatureStatus(FeatureType_Native, "L4D_HasAnySurvivorLeftSafeArea") == FeatureStatus_Available
@@ -259,7 +259,7 @@ public Action T_Tentar(Handle timer)
     return Plugin_Stop;
 }
 
-// ---------------------------------------------------------------- comando de admin
+// ---------------------------------------------------------------- admin command
 
 public Action Cmd_Arsenal(int client, int args)
 {
@@ -290,7 +290,7 @@ public Action Cmd_Arsenal(int client, int args)
 
 // ---------------------------------------------------------------- posicao
 
-// Escolhe o sobrevivente vivo mais perto do centro do grupo (de preferencia dentro do abrigo)
+// Picks the living survivor closest to the center of the group (preferably inside the saferoom)
 int AcharAncora(float ancora[3])
 {
     bool temL4DH = GetFeatureStatus(FeatureType_Native, "L4D_IsPositionInFirstCheckpoint") == FeatureStatus_Available;
@@ -346,18 +346,18 @@ int AcharAncora(float ancora[3])
 public bool Filtro(int entity, int contentsMask, any data)
 {
     if (entity >= 1 && entity <= MaxClients)
-        return false;           // ignora jogadores
+        return false;           // ignores players
     if (entity > MaxClients && IsValidEntity(entity))
     {
         char cls[32];
         GetEntityClassname(entity, cls, sizeof(cls));
         if (strncmp(cls, "weapon_", 7) == 0)
-            return false;       // ignora armas e itens
+            return false;       // ignores weapons and items
     }
     return true;
 }
 
-// Procura o chao debaixo de um ponto. Retorna false se nao achar.
+// Finds the floor below a point. Returns false if none is found.
 bool AcharChao(const float de[3], float distancia, float chao[3], float normal[3])
 {
     float ate[3];
@@ -378,19 +378,19 @@ bool PontoValido(const float olho[3], float chaoBase, float x, float y, float sa
     alto[1] = y;
     alto[2] = chaoBase + ALTURA_OLHO;
 
-    // 1) caminho livre do jogador ate o ponto (parede, porta, janela, cerca invisivel)
+    // 1) clear path from the player to the point (wall, door, window, invisible fence)
     TR_TraceRayFilter(olho, alto, MASK_PLAYERSOLID, RayType_EndPoint, Filtro);
     if (TR_DidHit())
         return false;
 
-    // 2) chao plano na mesma altura do jogador (nada de cima de mesa ou andar de baixo)
+    // 2) flat floor at the player's height (nothing on top of a table or on the floor below)
     float chao[3], normal[3];
     if (!AcharChao(alto, ALTURA_OLHO + 40.0, chao, normal))
         return false;
     if (normal[2] < 0.85 || FloatAbs(chao[2] - chaoBase) > 20.0)
         return false;
 
-    // 3) espaco livre em volta (nao encostar em movel ou parede)
+    // 3) free space around it (not touching furniture or a wall)
     float mins[3] = { -10.0, -10.0, 0.0 };
     float maxs[3] = { 10.0, 10.0, 4.0 };
     TR_TraceHullFilter(alto, chao, mins, maxs, MASK_PLAYERSOLID, Filtro);
@@ -401,7 +401,7 @@ bool PontoValido(const float olho[3], float chaoBase, float x, float y, float sa
     if (fim[2] - chao[2] > 4.0)
         return false;
 
-    // 4) longe das portas do abrigo
+    // 4) away from the saferoom doors
     for (int k = 0; k < g_iNumPortas; k++)
     {
         float dx = chao[0] - g_vPortas[k][0];
@@ -410,7 +410,7 @@ bool PontoValido(const float olho[3], float chaoBase, float x, float y, float sa
             return false;
     }
 
-    // 5) dentro do abrigo, quando da para saber
+    // 5) inside the saferoom, when that can be known
     if (g_bUsarAbrigo)
     {
         float p[3];
@@ -442,7 +442,7 @@ int AcharPontos(const float ancora[3], float pontos[MAX_PONTOS][3])
     while ((porta = FindEntityByClassname(porta, "prop_door_rotating_checkpoint")) != -1 && g_iNumPortas < MAX_PORTAS)
         GetEntPropVector(porta, Prop_Send, "m_vecOrigin", g_vPortas[g_iNumPortas++]);
 
-    // pontos candidatos em grade, do mais perto para o mais longe
+    // candidate points on a grid, nearest to farthest
     float cx[MAX_PONTOS], cy[MAX_PONTOS], cd[MAX_PONTOS];
     int nc = 0;
     for (int dx = -GRADE_MEIA; dx <= GRADE_MEIA; dx++)
@@ -493,7 +493,7 @@ int LimparArsenal()
         int ent = EntRefToEntIndex(g_iCriados[k]);
         if (ent == INVALID_ENT_REFERENCE)
             continue;
-        // nao tira arma da mao de ninguem
+        // never takes a weapon out of anyone's hands
         if (HasEntProp(ent, Prop_Send, "m_hOwner") && GetEntPropEnt(ent, Prop_Send, "m_hOwner") != -1)
             continue;
         RemoveEntity(ent);
@@ -513,7 +513,7 @@ bool EdictSeguro(int ent)
     return true;
 }
 
-// Ponto de arma que pode ser pego varias vezes (igual aos do mapa)
+// Weapon spot that can be picked up many times (like the map's own)
 bool CriarPontoDeArma(int idx, const float pos[3], float yaw)
 {
     int ent = CreateEntityByName("weapon_spawn");
@@ -544,7 +544,7 @@ bool CriarPontoDeArma(int idx, const float pos[3], float yaw)
     p[2] += 2.0;
     a[0] = 0.0;
     a[1] = yaw;
-    a[2] = 90.0;                // deitada de lado, como as do mapa
+    a[2] = 90.0;                // lying on its side, like the map's own
     TeleportEntity(ent, p, a, NULL_VECTOR);
     DispatchSpawn(ent);
     SetEntityMoveType(ent, MOVETYPE_NONE);
@@ -552,7 +552,7 @@ bool CriarPontoDeArma(int idx, const float pos[3], float yaw)
     return true;
 }
 
-// Item solto (corpo a corpo e especiais): cai no chao com fisica
+// Loose item (melee and specials): falls to the floor with physics
 bool CriarItemSolto(const char[] classe, const char[] melee, const float pos[3], int camada)
 {
     int ent = CreateEntityByName(classe);
@@ -617,14 +617,14 @@ int MontarArsenal(const float ancora[3], int quem, const char[] motivo)
     int np = AcharPontos(ancora, pontos);
     if (np == 0)
     {
-        // sem espaco livre: usa o proprio lugar do jogador
+        // no free space: uses the player's own spot
         pontos[0] = ancora;
         np = 1;
     }
 
     int usado = 0, armas = 0, tiposMelee = 0, melees = 0, especiais = 0, falhas = 0;
 
-    // 1) armas de fogo (prioridade nos lugares mais perto)
+    // 1) firearms (nearest spots first)
     for (int i = 0; i < sizeof(g_iArmaId); i++)
     {
         if (g_iArmaGrupo[i] == 1 && !g_cvCss.BoolValue)
@@ -634,7 +634,7 @@ int MontarArsenal(const float ancora[3], int quem, const char[] motivo)
         int slot = usado % np;
         float pos[3];
         pos = pontos[slot];
-        if (usado >= np)    // faltou lugar: encosta ao lado de outra arma
+        if (usado >= np)    // ran out of spots: placed next to another weapon
         {
             pos[0] += 12.0 * float(usado / np);
             pos[1] -= 12.0 * float(usado / np);
@@ -646,7 +646,7 @@ int MontarArsenal(const float ancora[3], int quem, const char[] motivo)
         usado++;
     }
 
-    // 2) corpo a corpo: todas as do mapa, cada tipo num lugar
+    // 2) melee: every one on the map, each type in its own spot
     char lista[MAX_MELEE][64];
     int nm = LerMelees(lista);
     int qm = g_cvMelee.IntValue;

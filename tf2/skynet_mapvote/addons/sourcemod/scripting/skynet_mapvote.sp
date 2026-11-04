@@ -33,12 +33,12 @@ ConVar g_cvVoteDelay, g_cvMaxRounds, g_cvBefore, g_cvExtend;
 bool g_bEstendido;
 ConVar g_cvRtvNeeded, g_cvRtvDelay, g_cvRtvInterval;
 bool g_bRtv[MAXPLAYERS + 1];
-int g_Indicou[MAXPLAYERS + 1] = {-1, ...};   // mapa (indice em g_Map) que cada jogador indicou com !nominate
+int g_Indicou[MAXPLAYERS + 1] = {-1, ...};   // map (index into g_Map) each player nominated with !nominate
 float g_fIndicouEm[MAXPLAYERS + 1];
-bool g_Excluir[MAX_MAPS];                     // mapas que o sorteio nao pode repetir (ja entraram por indicacao)
-bool g_bModoRtv;        // a votacao aberta agora veio do !rtv (o mapa troca na hora)
-bool g_bVotoFeito;      // a votacao normal ja escolheu o proximo mapa
-float g_fRtvLiberado;   // GetEngineTime() a partir do qual o !rtv vale
+bool g_Excluir[MAX_MAPS];                     // maps the draw cannot repeat (already in by nomination)
+bool g_bModoRtv;        // the vote open right now came from !rtv (the map changes immediately)
+bool g_bVotoFeito;      // the normal vote already chose the next map
+float g_fRtvLiberado;   // GetEngineTime() from which !rtv counts
 int g_iLimiteOriginal = -1;
 int g_iRodadasOriginal = -1;
 char g_ConfigFile[PLATFORM_MAX_PATH];
@@ -195,7 +195,7 @@ public void OnMapStart()
     CreateTimer(5.0, Timer_CheckTimeLeft, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }
 
-// Modo por tempo (mapas com mp_timelimit, como os de Dodgeball): abre a votacao quando falta pouco para o fim do mapa
+// Time mode (maps with mp_timelimit, like the Dodgeball ones): opens the vote when the map is close to ending
 public Action Timer_CheckTimeLeft(Handle timer)
 {
     int before = g_cvBefore.IntValue;
@@ -209,7 +209,7 @@ public Action Timer_CheckTimeLeft(Handle timer)
     return Plugin_Continue;
 }
 
-// O que a extensao mudou volta ao normal no proximo mapa
+// Whatever the extension changed goes back to normal on the next map
 public void OnMapEnd()
 {
     if (g_iLimiteOriginal >= 0)
@@ -221,7 +221,7 @@ public void OnMapEnd()
     g_bEstendido = false;
 }
 
-// +N minutos no tempo do mapa; se o mapa acaba por rodadas, +1 rodada. Depois a votacao abre de novo perto do fim.
+// +N minutes on the map time; if the map ends by rounds, +1 round. Then the vote opens again near the end.
 void Estender()
 {
     int minutos = g_cvExtend.IntValue;
@@ -247,7 +247,7 @@ public void OnConfigsExecuted()
     CreateTimer(5.0, Timer_ProvisionalNext, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-// Proximo mapa provisorio, para o caso de a votacao nao acontecer (ex.: a partida nao chega ao fim)
+// Provisional next map, in case the vote does not happen (e.g. the match does not reach the end)
 public Action Timer_ProvisionalNext(Handle timer)
 {
     int pick[MAX_OPTS];
@@ -294,7 +294,7 @@ int BuildOptions(int[] out, int wanted, bool registerVote)
             continue;
         pool[poolCount++] = i;
     }
-    // Poucos mapas fora do cooldown: completa com os que estao no cooldown
+    // Few maps outside the cooldown: fills up with the ones in cooldown
     if (poolCount < wanted)
     {
         for (int i = 0; i < g_Count; i++)
@@ -310,7 +310,7 @@ int BuildOptions(int[] out, int wanted, bool registerVote)
     }
 
     int n = 0;
-    // Vaga garantida para o mapa ha mais tempo fora da votacao
+    // Guaranteed slot for the map that has gone longest without being in the vote
     int starve = g_cvStarve.IntValue;
     int best = -1, bestSince = -1;
     for (int k = 0; k < poolCount; k++)
@@ -327,7 +327,7 @@ int BuildOptions(int[] out, int wanted, bool registerVote)
         out[n++] = pool[best];
         pool[best] = pool[--poolCount];
     }
-    // Sorteio ponderado, sem repetir mapa
+    // Weighted draw, no repeated maps
     while (n < wanted && poolCount > 0)
     {
         float total = 0.0;
@@ -369,7 +369,7 @@ public void Ev_RoundWin(Event event, const char[] name, bool dontBroadcast)
     g_RoundsPlayed++;
 }
 
-// A votacao abre durante a ultima rodada, com o pessoal jogando (no placar final o menu fica escondido)
+// The vote opens during the last round, while people are playing (on the final scoreboard the menu stays hidden)
 public void Ev_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
     if (g_VoteStarted || g_cvBefore.IntValue > 0)
@@ -390,7 +390,7 @@ public Action Timer_StartVote(Handle timer)
     return Plugin_Stop;
 }
 
-// Se a rodada acabou antes da votacao abrir, fica o proximo mapa ja sorteado pelo mesmo sistema
+// If the round ended before the vote opened, the next map already drawn by the same system is kept
 public void Ev_GameOver(Event event, const char[] name, bool dontBroadcast)
 {
     if (g_VoteStarted)
@@ -532,7 +532,7 @@ int RtvVotos()
     return n;
 }
 
-// Depois de uma votacao de RTV: zera os pedidos; se continuou, o !rtv so volta depois de um tempo
+// After an RTV vote: resets the requests; if the map continued, !rtv only comes back after a while
 void FimRtv(bool continuou)
 {
     g_bModoRtv = false;
@@ -603,7 +603,7 @@ void ChecarRtv()
         CreateTimer(3.0, T_TentarRtv, _, TIMER_FLAG_NO_MAPCHANGE);
         return;
     }
-    // a votacao normal ja escolheu o proximo mapa: vai direto para ele
+    // the normal vote already chose the next map: go straight to it
     char next[PLATFORM_MAX_PATH];
     if (g_bVotoFeito && GetNextMap(next, sizeof(next)))
     {
@@ -615,7 +615,7 @@ void ChecarRtv()
     g_bModoRtv = true;
     g_VoteStarted = false;
     StartMapVote();
-    if (!IsVoteInProgress())   // nao abriu (ex.: so um mapa possivel): troca para o que ficou como proximo
+    if (!IsVoteInProgress())   // did not open (e.g. only one possible map): change to whatever is set as next
         CreateTimer(5.0, T_Trocar, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
@@ -640,7 +640,7 @@ public Action T_Trocar(Handle timer)
 
 // ---------------------------------------------------------------- !nominate
 
-// Opcoes da votacao: primeiro os mapas indicados (por ordem de chegada), o resto pelo sorteio de sempre
+// Vote options: nominated maps first (in order of arrival), the rest by the usual draw
 int MontarOpcoes(int[] out, int wanted)
 {
     int n = 0;
@@ -686,7 +686,7 @@ public int PorNome(int a, int b, const int[] lista, Handle h)
     return strcmp(g_Map[a], g_Map[b], false);
 }
 
-// 0 = pode indicar; 1 = mapa atual; 2 = jogado ha pouco; 3 = fora da rotacao
+// 0 = can nominate; 1 = current map; 2 = played recently; 3 = out of the rotation
 int Situacao(int i)
 {
     char cur[PLATFORM_MAX_PATH];

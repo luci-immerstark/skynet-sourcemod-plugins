@@ -2,7 +2,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-// Fornecidas pelo Point System API (PointSystemAPI.smx)
+// Provided by Point System API (PointSystemAPI.smx)
 native float PSAPI_GetPoints(int client);
 native void PSAPI_HardSetPoints(int client, float fPoints);
 
@@ -15,14 +15,14 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// 1.1: o Point System devolve, na fase seguinte, o saldo que o jogador tinha quando entrou no time
-// (ele so guarda o saldo quando o jogador troca de time). Agora este plugin guarda o saldo de cada um
-// e devolve depois da troca de fase.
+// 1.1: on the next chapter, Point System gives back the balance the player had when they joined the team
+// (it only saves the balance when the player changes team). Now this plugin saves everyone's balance
+// and gives it back after the chapter change.
 
-StringMap g_hSessao;          // SteamIDs de quem esta numa sessao (sobrevive a troca de mapa)
+StringMap g_hSessao;          // SteamIDs of players in a session (survives map changes)
 StringMap g_hPontos;          // SteamID -> saldo guardado
-bool g_bPronto[MAXPLAYERS + 1];   // saldo ja conferido nesta fase: pode ser guardado
-int g_iEspera[MAXPLAYERS + 1];    // rodadas do T_Guardar esperando a conferencia
+bool g_bPronto[MAXPLAYERS + 1];   // balance already checked this chapter: it can be saved
+int g_iEspera[MAXPLAYERS + 1];    // T_Guardar rounds waiting for the check
 ConVar g_cvInicio;
 char g_sLog[PLATFORM_MAX_PATH];
 
@@ -38,13 +38,13 @@ public void OnPluginStart()
     g_hSessao = new StringMap();
     g_hPontos = new StringMap();
     BuildPath(Path_SM, g_sLog, sizeof(g_sLog), "logs/skynet_pontos.log");
-    HookEvent("player_disconnect", Ev_Saiu, EventHookMode_Pre);   // so dispara quando o jogador sai de verdade
+    HookEvent("player_disconnect", Ev_Saiu, EventHookMode_Pre);   // only fires when the player really leaves
     HookEvent("player_team", Ev_Time);
     HookEvent("finale_win", Ev_FimDaCampanha, EventHookMode_PostNoCopy);
     HookEvent("round_end", Ev_FimDaRodada, EventHookMode_PostNoCopy);
     CreateTimer(2.0, T_Guardar, _, TIMER_REPEAT);
 
-    // carregado com gente jogando: quem ja esta no servidor continua a sessao que tem
+    // loaded with people playing: players already on the server keep their current session
     char id[64];
     for (int i = 1; i <= MaxClients; i++)
     {
@@ -74,7 +74,7 @@ float PontosIniciais()
     return g_cvInicio != null ? g_cvInicio.FloatValue : 0.0;
 }
 
-// guarda o saldo de quem ja foi conferido nesta fase e esta jogando de sobrevivente
+// saves the balance of players already checked this chapter and playing as survivors
 void GuardarTodos()
 {
     if (!PsapiPronto())
@@ -158,7 +158,7 @@ public Action T_ConferirSessao(Handle timer, DataPack dp)
     if (client <= 0 || !IsClientInGame(client) || IsFakeClient(client))
         return Plugin_Stop;
 
-    if (!Conferir(client) && tentativas < 20)   // a Steam ainda nao confirmou o jogador: tenta de novo
+    if (!Conferir(client) && tentativas < 20)   // Steam has not confirmed the player yet: try again
     {
         DataPack outro = new DataPack();
         outro.WriteCell(userid);
@@ -168,14 +168,14 @@ public Action T_ConferirSessao(Handle timer, DataPack dp)
     return Plugin_Stop;
 }
 
-// sessao nova: pontos iniciais; mesma sessao: devolve o saldo guardado se o Point System mexeu nele
-// retorna false se a Steam ainda nao confirmou o jogador
+// new session: starting points; same session: gives back the saved balance if Point System changed it
+// returns false if Steam has not confirmed the player yet
 bool Conferir(int client)
 {
     char id[64];
     if (!GetClientAuthId(client, AuthId_Steam2, id, sizeof(id)))
         return false;
-    if (!PsapiPronto() || GetClientTeam(client) != 2)   // so confere quem esta jogando de sobrevivente
+    if (!PsapiPronto() || GetClientTeam(client) != 2)   // only checks players playing as survivors
         return true;
     float agora = PSAPI_GetPoints(client);
 
@@ -204,7 +204,7 @@ bool Conferir(int client)
 
 public void Ev_FimDaCampanha(Event event, const char[] name, bool dontBroadcast)
 {
-    // espera o proprio Point System terminar o que ele faz no fim da campanha
+    // waits for Point System itself to finish what it does at the end of the campaign
     CreateTimer(0.5, T_ZerarTodos, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 

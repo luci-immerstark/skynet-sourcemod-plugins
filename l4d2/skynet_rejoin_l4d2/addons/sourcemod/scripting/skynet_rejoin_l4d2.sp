@@ -3,7 +3,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-// Fornecida pelo Left 4 DHooks (declarada aqui para nao depender do include na compilacao)
+// Provided by Left 4 DHooks (declared here so compiling does not depend on the include)
 native void L4D_RespawnPlayer(int client, bool reset = true);
 
 public Plugin myinfo =
@@ -76,7 +76,7 @@ public Action Cmd_Check(int client, int args)
     return Plugin_Handled;
 }
 
-// Jogador ausente (idle): existe um bot sobrevivente guardando o lugar dele
+// Idle player: a survivor bot is holding their spot
 bool EstaAusente(int client)
 {
     int uid = GetClientUserId(client);
@@ -108,7 +108,7 @@ int Verificar(const char[] motivo)
     {
         if (!IsClientInGame(i) || IsFakeClient(i))
             continue;
-        if (GetClientTime(i) < 15.0)   // acabou de entrar: o plugin de slots cuida dele
+        if (GetClientTime(i) < 15.0)   // just joined: the slots plugin takes care of them
             continue;
 
         int time = GetClientTeam(i);
@@ -121,7 +121,7 @@ int Verificar(const char[] motivo)
         }
         else if (time == 2 && !IsPlayerAlive(i))
         {
-            if (g_fMorte[i] > g_fInicio)    // morreu nesta rodada: morte normal, nao revive
+            if (g_fMorte[i] > g_fInicio)    // died this round: normal death, no revive
                 continue;
             if (GetFeatureStatus(FeatureType_Native, "L4D_RespawnPlayer") != FeatureStatus_Available)
             {

@@ -1,6 +1,6 @@
-// SKYNET: !fov <numero> no chat muda o campo de visao do jogador (75 a 120). !fov sozinho volta ao do jogo.
-//   Le o chat direto (!fov 110, /fov 110, !fov110), sem depender do gatilho do SourceMod.
-//   O valor fica salvo (clientprefs) e volta sozinho a cada spawn e a cada vez que o jogador entra.
+// SKYNET: !fov <number> in chat changes the player's field of view (75 to 120). !fov alone goes back to the game's.
+//   Reads chat directly (!fov 110, /fov 110, !fov110), without depending on the SourceMod trigger.
+//   The value is saved (clientprefs) and comes back by itself on every spawn and every time the player joins.
 #include <sourcemod>
 #include <sdktools>
 #include <tf2>
@@ -50,7 +50,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
     strcopy(arg, sizeof(arg), texto[4]);
     TrimString(arg);
     Fov(client, arg);
-    return Plugin_Handled;      // trata aqui e esconde o comando do chat
+    return Plugin_Handled;      // handles it here and hides the command from chat
 }
 
 public void OnClientConnected(int client)
@@ -73,7 +73,7 @@ void Aplicar(int client)
         return;
     int fov = g_Fov[client];
     SetEntProp(client, Prop_Send, "m_iDefaultFOV", fov);
-    if (!TF2_IsPlayerInCondition(client, TFCond_Zoomed))     // nao estraga a luneta do Sniper
+    if (!TF2_IsPlayerInCondition(client, TFCond_Zoomed))     // does not break the Sniper's scope
         SetEntProp(client, Prop_Send, "m_iFOV", fov);
 }
 

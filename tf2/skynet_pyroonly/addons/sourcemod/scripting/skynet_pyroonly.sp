@@ -23,7 +23,7 @@ public void OnPluginStart()
         HookUserMessage(vgui, Msg_VGUIMenu, true);
 }
 
-// Impede o servidor de abrir o menu de classes
+// Stops the server from opening the class menu
 public Action Msg_VGUIMenu(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
 {
     char panel[32];
@@ -51,7 +51,7 @@ public Action Timer_ForcePyro(Handle timer, any userid)
     return Plugin_Stop;
 }
 
-// Qualquer escolha de classe diferente de Pyro e recusada
+// Any class choice other than Pyro is refused
 public Action Cmd_JoinClass(int client, const char[] command, int argc)
 {
     if (client < 1 || client > MaxClients || !IsClientInGame(client))

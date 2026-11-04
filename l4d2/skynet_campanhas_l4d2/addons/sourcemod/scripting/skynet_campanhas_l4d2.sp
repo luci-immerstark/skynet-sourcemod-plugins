@@ -8,12 +8,12 @@
 #define MAX_OPTS 5
 #define NUNCA -100000
 
-// Fornecida pelo Left 4 DHooks (opcional: as campanhas oficiais ja estao na tabela abaixo)
+// Provided by Left 4 DHooks (optional: the official campaigns are already in the table below)
 native bool L4D_IsMissionFinalMap(bool anyMap = false);
-// Verdadeiro enquanto o veiculo de resgate vai embora, ate a tela escurecer e os creditos comecarem
+// True while the rescue vehicle drives away, until the screen fades out and the credits start
 native bool L4D_IsFinaleEscapeInProgress();
 native bool L4D_HasAnySurvivorLeftSafeArea();
-// Caminho da votacao do jogo: reinicia a rodada trocando de mapa (a abertura da campanha roda normal)
+// The game's vote path: restarts the round by changing map (the campaign intro plays normally)
 native int L4D_RestartScenarioFromVote(const char[] map);
 
 public Plugin myinfo =
@@ -48,15 +48,15 @@ ConVar g_cvTempo, g_cvOpcoes, g_cvCooldown, g_cvStarve, g_cvEspera, g_cvTroca;
 ConVar g_cvPenal, g_cvVoteGrow, g_cvVoteCap, g_cvPlayGrow, g_cvPlayCap;
 
 bool g_bValida[MAX_CAMP];
-int g_LastPlayed[MAX_CAMP];      // numero da campanha (contador) em que foi jogada pela ultima vez
-int g_LastVoted[MAX_CAMP];       // numero da votacao em que apareceu pela ultima vez
-int g_Contador;                  // quantas campanhas ja comecaram
-int g_VoteCounter;               // quantas votacoes ja aconteceram
-int g_Atual = -1;                // campanha em andamento (registrada quando alguem sai do abrigo)
+int g_LastPlayed[MAX_CAMP];      // campaign number (counter) in which it was last played
+int g_LastVoted[MAX_CAMP];       // vote number in which it last appeared
+int g_Contador;                  // how many campaigns have started
+int g_VoteCounter;               // how many votes have happened
+int g_Atual = -1;                // campaign in progress (recorded when someone leaves the saferoom)
 
-int g_Proxima = -1;              // escolhida para depois desta campanha
-bool g_bVotou;                   // a votacao deste mapa ja aconteceu
-char g_sMapaVoto[PLATFORM_MAX_PATH];   // mapa (fase final) em que a votacao aconteceu: o resultado vale ate o resgate
+int g_Proxima = -1;              // chosen for after this campaign
+bool g_bVotou;                   // this map's vote has already happened
+char g_sMapaVoto[PLATFORM_MAX_PATH];   // map (finale) where the vote happened: the result holds until the rescue
 TopMenu g_hTopMenu;
 bool g_bTrocando;
 int g_Opt[MAX_OPTS];
@@ -124,7 +124,7 @@ public void OnLibraryRemoved(const char[] name)
         g_hTopMenu = null;
 }
 
-// Menu de admin: "Trocar campanha" (comandos do servidor) e "Votar campanha" (comandos de votacao)
+// Admin menu: "Change campaign" (server commands) and "Vote campaign" (voting commands)
 public void OnAdminMenuReady(Handle aTopMenu)
 {
     TopMenu topmenu = TopMenu.FromHandle(aTopMenu);
@@ -240,15 +240,15 @@ void SalvarEstado()
 public void OnMapStart()
 {
     CarregarEstado();
-    // O resultado da votacao da fase final so vale ate o resgate. Se o time perder e a fase final
-    // recomecar, a escolha continua guardada e a votacao nao abre de novo.
+    // The finale vote result only holds until the rescue. If the team loses and the finale
+    // restart, the choice stays saved and the vote does not open again.
     char mapa[PLATFORM_MAX_PATH];
     GetCurrentMap(mapa, sizeof(mapa));
-    // a escolha vale ate o fim da campanha em que foi votada (troca de capitulo e derrota nao apagam)
+    // the choice holds until the end of the campaign it was voted in (chapter changes and wipes do not erase it)
     int cAgora = CampanhaDoMapa(mapa);
     bool mesma = g_sMapaVoto[0] != '\0' && (cAgora != -1 ? cAgora == CampanhaDoMapa(g_sMapaVoto) : StrEqual(mapa, g_sMapaVoto, false));
     if (cAgora != -1 && StrEqual(mapa, g_sInicio[cAgora], false))
-        mesma = false;                 // campanha recomecou do capitulo 1: vota de novo no final
+        mesma = false;                 // campaign restarted from chapter 1: vote again at the finale
     if (!mesma)
     {
         g_Proxima = -1;
@@ -304,7 +304,7 @@ int MontarOpcoes(int[] saida, int quantas, bool registrar)
             continue;
         pool[n++] = i;
     }
-    if (n < quantas)                  // poucas fora do cooldown: completa com as recentes
+    if (n < quantas)                  // few outside the cooldown: fills up with the recent ones
     {
         for (int i = 0; i < MAX_CAMP; i++)
         {
@@ -322,7 +322,7 @@ int MontarOpcoes(int[] saida, int quantas, bool registrar)
     }
 
     int feitas = 0;
-    // vaga garantida para quem esta ha mais tempo sem aparecer
+    // guaranteed slot for the one that has gone longest without appearing
     int melhor = -1, melhorTempo = -1;
     for (int k = 0; k < n; k++)
     {
@@ -338,7 +338,7 @@ int MontarOpcoes(int[] saida, int quantas, bool registrar)
         saida[feitas++] = pool[melhor];
         pool[melhor] = pool[--n];
     }
-    // sorteio com peso, sem repetir
+    // weighted draw, no repeats
     while (feitas < quantas && n > 0)
     {
         float total = 0.0;
@@ -359,7 +359,7 @@ int MontarOpcoes(int[] saida, int quantas, bool registrar)
         saida[feitas++] = pool[escolhida];
         pool[escolhida] = pool[--n];
     }
-    // embaralha a ordem na tela: a vaga garantida nao fica sempre na tecla 1
+    // shuffles the order on screen: the guaranteed slot is not always on key 1
     for (int k = feitas - 1; k > 0; k--)
     {
         int j = GetURandomInt() % (k + 1);
@@ -394,13 +394,13 @@ public void Ev_SaiuDoAbrigo(Event event, const char[] name, bool dontBroadcast)
     AoSairDoAbrigo();
 }
 
-// Left 4 DHooks avisa a saida do abrigo de forma mais confiavel que o evento do jogo
+// Left 4 DHooks reports leaving the saferoom more reliably than the game event
 public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
 {
     AoSairDoAbrigo();
 }
 
-// Fase final: confere a cada segundo se alguem ja saiu do abrigo (nao depende de evento do jogo)
+// Finale: checks every second whether someone has left the saferoom (does not depend on a game event)
 public void Ev_InicioRodada(Event event, const char[] name, bool dontBroadcast)
 {
     if (g_hTimerSaida == null && EhFaseFinal())
@@ -424,7 +424,7 @@ public Action T_VigiaSaida(Handle timer)
     return Plugin_Continue;
 }
 
-// O final comecou (radio/botao do resgate): se a votacao ainda nao abriu, abre agora
+// The finale started (rescue radio/button): if the vote has not opened yet, open it now
 public void Ev_FinalComecou(Event event, const char[] name, bool dontBroadcast)
 {
     if (g_bVotou || g_bTrocando || g_hTimerVoto != null || !EhFaseFinal())
@@ -439,7 +439,7 @@ void AoSairDoAbrigo()
     char mapa[PLATFORM_MAX_PATH];
     GetCurrentMap(mapa, sizeof(mapa));
     int c = CampanhaDoMapa(mapa);
-    if (c != -1 && c != g_Atual)       // comecou uma campanha nova (vale pra votacao: fica na "geladeira")
+    if (c != -1 && c != g_Atual)       // a new campaign started (counts for the vote: it goes on the "bench")
     {
         g_Contador++;
         g_LastPlayed[c] = g_Contador;
@@ -467,7 +467,7 @@ public Action T_AbrirVotacao(Handle timer)
         g_hTimerVoto = null;
         return Plugin_Stop;
     }
-    if (IsVoteInProgress())            // outra votacao rolando: tenta de novo daqui a pouco
+    if (IsVoteInProgress())            // another vote in progress: try again shortly
     {
         if (++g_Tentativas < 36)
         {
@@ -560,7 +560,7 @@ public void Ev_Resgate(Event event, const char[] name, bool dontBroadcast)
     CreateTimer(g_cvTroca.FloatValue, T_Reserva, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-// Resgate concluido: escolhe a proxima (se ninguem votou) e guarda o estado. Roda uma vez so.
+// Rescue done: picks the next one (if nobody voted) and saves the state. Runs only once.
 bool FinalizarCampanha()
 {
     if (g_bTrocando)
@@ -574,7 +574,7 @@ bool FinalizarCampanha()
         int escolha[MAX_OPTS];
         if (MontarOpcoes(escolha, 3, true) > 0)
         {
-            g_Proxima = escolha[0];        // as opcoes ja saem embaralhadas
+            g_Proxima = escolha[0];        // the options already come out shuffled
             LogToFileEx(g_sLog, "Sem votacao nesta campanha: proxima sorteada (%s)", g_sNome[g_Proxima]);
         }
     }
@@ -592,7 +592,7 @@ public void Ev_VeiculoSaindo(Event event, const char[] name, bool dontBroadcast)
     IniciarVigia();
 }
 
-// Acompanha o veiculo indo embora: quando a tela escurece para os creditos, troca de campanha
+// Follows the vehicle driving away: when the screen fades out for the credits, changes campaign
 void IniciarVigia()
 {
     if (g_hTimerFuga != null || g_bMudou)
@@ -613,7 +613,7 @@ public Action T_VigiaFuga(Handle timer)
         TrocarNoFim("fim do resgate");
         return Plugin_Stop;
     }
-    if (++g_iTicksFuga > 3000)          // 5 minutos sem sinal: desiste (a reserva cuida)
+    if (++g_iTicksFuga > 3000)          // 5 minutes without a signal: gives up (the fallback takes care of it)
     {
         g_hTimerFuga = null;
         return Plugin_Stop;
@@ -647,7 +647,7 @@ public Action T_Trocar(Handle timer, any c)
     if (g_cvAbertura.BoolValue
         && GetFeatureStatus(FeatureType_Native, "L4D_RestartScenarioFromVote") == FeatureStatus_Available)
     {
-        // reserva antes da chamada: se o jogo nao trocar de mapa, o changelevel garante a troca
+        // fallback before the call: if the game does not change map, the changelevel makes sure it does
         CreateTimer(15.0, T_TrocarReserva, c, TIMER_FLAG_NO_MAPCHANGE);
         LogToFileEx(g_sLog, "Mudando para %s pelo caminho da votacao do jogo", g_sInicio[c]);
         L4D_RestartScenarioFromVote(g_sInicio[c]);
@@ -681,7 +681,7 @@ public Action Cmd_Votar(int client, int args)
 
 public Action Cmd_Trocar(int client, int args)
 {
-    if (args > 0)                      // pelo console: sm_campanha_trocar c2
+    if (args > 0)                      // from the console: sm_campanha_trocar c2
     {
         char cod[8];
         GetCmdArg(1, cod, sizeof(cod));
@@ -753,7 +753,7 @@ void TrocarAgora(int client, int c)
     CreateTimer(3.0, T_Trocar, c, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-// Votacao aberta por um admin: escolhe a PROXIMA campanha, igual a da fase final (troca so depois do resgate)
+// Vote opened by an admin: picks the NEXT campaign, same as the finale vote (changes only after the rescue)
 void VotacaoAgora(int client)
 {
     if (IsVoteInProgress())
@@ -766,7 +766,7 @@ void VotacaoAgora(int client)
         return;
     if (client > 0 && IsClientInGame(client))
         PrintToChatAll("\x04[SKYNET GAMING]\x01 \x03%N\x01 abriu a votação da próxima campanha.", client);
-    delete g_hTimerVoto;               // a votacao automatica da fase final nao abre mais
+    delete g_hTimerVoto;               // the automatic finale vote no longer opens
     g_bVotou = false;
     g_Proxima = -1;
     AbrirVotacao();

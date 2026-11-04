@@ -11,8 +11,8 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// O lobby do jogo (ou uma votacao) pode trocar a dificuldade; a primeira campanha depois do servidor vazio
-// comecava no Normal. Qualquer troca volta para o Expert ("Impossible" no jogo).
+// The game lobby (or a vote) can change the difficulty; the first campaign after the server was empty
+// used to start on Normal. Any change goes back to Expert ("Impossible" in the game).
 
 ConVar g_cvAtivo;
 ConVar g_cvDificuldade;
@@ -59,7 +59,7 @@ void Forcar()
         g_cvDificuldade.SetString("Impossible");
         LogMessage("Dificuldade %s trocada de volta para Expert", atual);
     }
-    // tira a opcao "mudar dificuldade" da votacao do jogo (ela nao teria efeito)
+    // removes the "change difficulty" option from the game's vote (it would have no effect)
     ConVar voto = FindConVar("sv_vote_issue_change_difficulty_allowed");
     if (voto != null && voto.BoolValue)
         voto.BoolValue = false;

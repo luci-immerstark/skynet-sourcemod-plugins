@@ -11,9 +11,9 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// Por padrao o jogo encerra a partida quando nao sobra nenhum humano controlando sobrevivente
-// (todo mundo ausente, os bots no lugar). Com alguem conectado, os bots seguram a partida;
-// com o servidor vazio volta ao padrao, para o servidor hibernar normalmente.
+// By default the game ends the match when no human is left controlling a survivor
+// (everyone idle, bots in their place). With someone connected, the bots keep the match going;
+// with the server empty it goes back to the default, so the server hibernates normally.
 
 ConVar g_cvTodosBots;
 ConVar g_cvTimeBots;

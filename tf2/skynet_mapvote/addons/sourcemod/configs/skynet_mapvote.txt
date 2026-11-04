@@ -1,6 +1,5 @@
-// SKYNET Map Vote: mapas da votacao e o hype de cada um (0 a 5; quanto maior, mais aparece).
-// Map list for the vote and each map's hype (0 to 5; higher = shows up more often).
-// Mapas que nao estao instalados sao ignorados. / Maps that are not installed are skipped.
+// SKYNET Map Vote: map list for the vote and each map's hype (0 to 5; higher = shows up more often).
+// Maps that are not installed are skipped.
 "SkynetMapVote"
 {
     "ctf_2fort"             "5"

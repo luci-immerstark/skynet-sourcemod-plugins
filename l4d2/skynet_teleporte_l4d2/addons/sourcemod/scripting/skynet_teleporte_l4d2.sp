@@ -16,10 +16,10 @@ public Plugin myinfo =
 
 #define TAG "\x04[SKYNET]\x01 "
 
-// 1.1: secao "Teleporte" no menu de admin (!admin), com "Ir ate um jogador" e "Trazer um jogador"
+// 1.1: "Teleport" section in the admin menu (!admin), with "Go to a player" and "Bring a player"
 TopMenu g_hMenuAdmin;
 TopMenuObject g_oSecao = INVALID_TOPMENUOBJECT;
-bool g_bDoAdmin[MAXPLAYERS + 1];   // a lista foi aberta pelo menu de admin: o "Voltar" retorna a ele
+bool g_bDoAdmin[MAXPLAYERS + 1];   // the list was opened from the admin menu: "Back" returns to it
 
 public void OnPluginStart()
 {
@@ -89,7 +89,7 @@ void VoltarAoAdmin(int client)
         g_hMenuAdmin.DisplayCategory(g_oSecao, client);
 }
 
-// vivo, em jogo e nao pendurado na beirada (teleportar quem esta pendurado trava o jogador)
+// alive, in game and not hanging from a ledge (teleporting someone who is hanging gets them stuck)
 bool Movivel(int c)
 {
     if (c < 1 || c > MaxClients || !IsClientInGame(c) || GetClientTeam(c) < 2 || !IsPlayerAlive(c))

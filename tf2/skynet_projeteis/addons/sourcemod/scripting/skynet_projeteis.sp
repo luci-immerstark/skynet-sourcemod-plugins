@@ -1,6 +1,6 @@
-// SKYNET: quando um jogador morre, os projeteis dele que ainda estao no ar (foguete, granada, flecha, flare...)
-//   somem na hora e nao dao mais dano. Assim, no duelo, quem morre primeiro nao leva o outro junto.
-//   Stickies ja somem sozinhas no TF2. O Dead Ringer (morte falsa) nao conta.
+// SKYNET: when a player dies, their projectiles still in the air (rocket, grenade, arrow, flare...)
+//   vanish immediately and deal no more damage. So in a duel, whoever dies first does not take the other one along.
+//   Stickies already vanish by themselves in TF2. The Dead Ringer (fake death) does not count.
 #include <sourcemod>
 #include <sdktools>
 

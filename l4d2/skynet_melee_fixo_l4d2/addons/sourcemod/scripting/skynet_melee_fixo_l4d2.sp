@@ -13,9 +13,9 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// No jogo original, cada golpe corpo a corpo tira uma PORCENTAGEM da vida maxima:
-// 5% do Tank (morre com 20 golpes) e 25% da Witch (morre com 4), nao importa quanta vida eles tenham.
-// Aqui cada golpe tira um valor fixo. A motosserra nao muda.
+// In the original game, each melee hit takes a PERCENTAGE of max health:
+// 5% of the Tank (dies in 20 hits) and 25% of the Witch (dies in 4), no matter how much health they have.
+// Here each hit takes a fixed amount. The chainsaw is unchanged.
 
 #define TIME_SOBREVIVENTE 2
 #define TIME_INFECTADO    3
@@ -62,7 +62,7 @@ public void OnEntityCreated(int entity, const char[] classname)
     }
 }
 
-// Golpe de arma corpo a corpo dado por um sobrevivente (a motosserra fica de fora)
+// Melee hit dealt by a survivor (the chainsaw is left out)
 bool GolpeCorpoACorpo(int atacante, int inflictor, int tipo)
 {
     if (atacante < 1 || atacante > MaxClients || !IsClientInGame(atacante) || GetClientTeam(atacante) != TIME_SOBREVIVENTE)
@@ -108,8 +108,8 @@ public Action OnDanoWitch(int vitima, int &atacante, int &inflictor, float &dano
     return Plugin_Changed;
 }
 
-// Teste: "o jogo tiraria" e o dano que chegou ao plugin (sem plugin nenhum, 5% da vida maxima do Tank e 25% da Witch);
-// se a "vida antes do golpe" cair menos que o dano do plugin de um golpe pro outro, outro plugin esta reduzindo o dano depois.
+// Test: "the game would take" is the damage that reached the plugin (with no plugin at all, 5% of the Tank's max health and 25% of the Witch's);
+// if "health before the hit" drops by less than the plugin's damage from one hit to the next, another plugin is reducing the damage afterwards.
 void Avisar(int atacante, const char[] alvo, float jogo, float fixo, int vida, int maxima)
 {
     PrintToChat(atacante, "\x04[melee]\x01 %s: o jogo tiraria %.0f, o plugin tira %.0f | vida antes do golpe: %d de %d", alvo, jogo, fixo, vida, maxima);
@@ -127,8 +127,8 @@ int SobreviventesVivos()
     return n;
 }
 
-// Vida da Witch: minima com ate 4 sobreviventes vivos, sobe por igual ate a maxima e para nela
-// (padrao: 4 = 1000, 5 = 1667, 6 = 2333, 7 = 3000, 8 = 3667, 9 = 4333, 10 ou mais = 5000)
+// Witch health: minimum with up to 4 living survivors, rises evenly up to the maximum and stops there
+// (default: 4 = 1000, 5 = 1667, 6 = 2333, 7 = 3000, 8 = 3667, 9 = 4333, 10 or more = 5000)
 public void F_VidaWitch(int ref)
 {
     int witch = EntRefToEntIndex(ref);

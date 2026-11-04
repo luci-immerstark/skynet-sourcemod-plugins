@@ -12,25 +12,25 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// O sopro do Pyro pega projeteis dentro de uma caixa na frente dele: o centro fica 128 unidades a frente
-// do olho e a caixa vai 128 para os lados e 64 para cima e para baixo. So sopra com o foguete dentro da
-// caixa e com o sopro pronto; quanto mais rapido o foguete, mais cedo dentro da caixa.
+// The Pyro's airblast catches projectiles inside a box in front of him: the center is 128 units ahead
+// of the eye and the box goes 128 to the sides and 64 up and down. It only airblasts with the rocket inside the
+// box and with the airblast ready; the faster the rocket, the earlier inside the box.
 //
-// Modo BOT automatico: com 1 a 3 jogadores nos times (skynet_bot_jogadores - 1), entra o SKYNET BOT no azul,
-// parado onde nasce e rebatendo sozinho, e todos os jogadores vao para o vermelho (treino). Quando o 4o
-// jogador entra num time, o bot sai e os times sao embaralhados (2x2). O ranking (HLstats) ja so conta com
-// 4 jogadores ou mais e ignora bots. A troca so acontece depois de alguns segundos na mesma situacao.
+// Automatic BOT mode: with 1 to 3 players on the teams (skynet_bot_jogadores - 1), SKYNET BOT joins blue,
+// standing where it spawns and reflecting on its own, and all players go to red (practice). When the 4th
+// player joins a team, the bot leaves and the teams are scrambled (2v2). The ranking (HLstats) already only counts with
+// 4 or more players and ignores bots. The switch only happens after a few seconds in the same situation.
 //
-// Cota de bots: o tf_bot_add do TF2 soma 1 no tf_bot_quota, e o jogo repoe qualquer bot que saia por kick
-// enquanto a cota nao baixar (era isso que fazia entrar e sair um monte de bot e aparecer "bot normal").
-// Por isso a cota vai para 0 antes de tirar qualquer bot.
+// Bot quota: TF2's tf_bot_add adds 1 to tf_bot_quota, and the game replaces any bot kicked
+// while the quota does not go down (that is what made lots of bots join and leave and a "normal bot" show up).
+// That is why the quota goes to 0 before removing any bot.
 
 #define NOME_BOT "SKYNET BOT"
 #define TIME_VERMELHO 2
 #define TIME_AZUL 3
-#define ESPERA 5          // checagens (1 por segundo) na mesma situacao antes de trocar o modo
+#define ESPERA 5          // checks (1 per second) in the same situation before switching mode
 
-// Funcoes do plugin de Dodgeball (opcionais: sem elas, decide so pela posicao do foguete)
+// Functions from the Dodgeball plugin (optional: without them, it decides only by the rocket's position)
 native int TFDB_FindRocketByEntity(int iEntity);
 native int TFDB_GetRocketTarget(int iIndex);
 
@@ -71,7 +71,7 @@ public void OnPluginStart()
     g_cvJogadores  = CreateConVar("skynet_bot_jogadores", "4", "Com este numero de jogadores nos times o bot sai e o jogo fica normal", _, true, 2.0, true, 32.0);
     CreateTimer(1.0, T_Checar, _, TIMER_REPEAT);
     Cota(0);
-    // a versao antiga podia ter deixado o balanceamento desligado: comeca no normal do servidor
+    // the old version may have left autobalance off: start with the server's normal setting
     FindConVar("mp_autoteambalance").SetInt(1);
     FindConVar("mp_teams_unbalance_limit").SetInt(1);
     AddCommandListener(Ouvir_Time, "jointeam");
@@ -93,13 +93,13 @@ public void OnPluginEnd()
 
 public void OnMapEnd()
 {
-    // na troca de mapa o bot sai; no mapa novo o modo volta sozinho se tiver poucos jogadores
+    // on map change the bot leaves; on the new map the mode comes back by itself if there are few players
     if (g_bModoBot)
         DesligarBot(false);
     g_iEstavel = 0;
 }
 
-// ---------------------------------------------------------------- auto reflect em jogadores
+// ---------------------------------------------------------------- auto reflect on players
 
 public Action Cmd_Auto(int client, int args)
 {
@@ -123,7 +123,7 @@ public Action Cmd_Auto(int client, int args)
     return Plugin_Handled;
 }
 
-// ---------------------------------------------------------------- modo TODOS CONTRA O BOT (automatico)
+// ---------------------------------------------------------------- ALL VS BOT mode (automatic)
 
 int HumanosNosTimes()
 {
@@ -143,7 +143,7 @@ void Cota(int n)
         cota.SetInt(n);
 }
 
-// Acha o nosso bot e tira qualquer outro bot (ou o nosso, com o modo desligado)
+// Finds our bot and removes any other bot (or ours, with the mode off)
 void AcharBot()
 {
     int antes = g_iBot;
@@ -163,7 +163,7 @@ void AcharBot()
     }
     if (n > 0)
     {
-        Cota(g_iBot > 0 ? 1 : 0);   // senao o TF2 coloca outro bot no lugar
+        Cota(g_iBot > 0 ? 1 : 0);   // otherwise TF2 puts another bot in its place
         for (int k = 0; k < n; k++)
             KickClient(sobra[k], "%s", g_bModoBot ? "Bot sobrando" : "Modo bot desligado");
     }
@@ -216,7 +216,7 @@ void LigarBot()
         g_cvJogadores.IntValue);
 }
 
-// Com o modo ligado: o bot no azul e todos os jogadores no vermelho
+// With the mode on: the bot on blue and all players on red
 void ManterBot()
 {
     if (g_iBot == 0 && (g_fPedidoBot == 0.0 || GetEngineTime() - g_fPedidoBot > 5.0))
@@ -245,7 +245,7 @@ void DesligarBot(bool avisar)
     FindConVar("mp_teams_unbalance_limit").SetInt(1);
     if (!avisar)
         return;
-    // todos estavam no vermelho: o jogo embaralha os times e reinicia a rodada (2x2)
+    // everyone was on red: the game scrambles the teams and restarts the round (2v2)
     ServerCommand("mp_scrambleteams");
     PrintToChatAll("\x04[SKYNET]\x01 %d jogadores! O SKYNET BOT saiu e os times foram divididos. \x03Valendo ranking.",
         HumanosNosTimes());
@@ -261,7 +261,7 @@ public void OnClientDisconnect(int client)
     }
 }
 
-// Com o modo bot ligado, jogador nao entra no azul: vai para o vermelho
+// With bot mode on, players cannot join blue: they go to red
 public Action Ouvir_Time(int client, const char[] command, int argc)
 {
     if (!g_bModoBot || client < 1 || !IsClientInGame(client) || IsFakeClient(client))
@@ -298,7 +298,7 @@ public Action T_Ancorar(Handle timer, any userid)
 
 // ---------------------------------------------------------------- rebater
 
-// O ponto p esta dentro da area do sopro de quem olha de "olho" na direcao "dir"?
+// Is point p inside the airblast area of someone looking from "eye" in direction "dir"?
 bool NaCaixa(const float olho[3], const float dir[3], const float p[3], float lado, float altura)
 {
     float frente = g_cvFrente.FloatValue;
@@ -316,7 +316,7 @@ bool SoproPronto(int client)
     return GetEntPropFloat(arma, Prop_Send, "m_flNextSecondaryAttack") <= GetGameTime();
 }
 
-// O SKYNET BOT nao tem recarga de sopro nem fica sem municao: rebate tambem de perto, em troca rapida
+// SKYNET BOT has no airblast cooldown and never runs out of ammo: it also reflects up close, with a quick switch
 void RecarregarSopro(int client)
 {
     int arma = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -329,8 +329,8 @@ void RecarregarSopro(int client)
         SetEntProp(client, Prop_Send, "m_iAmmo", 200, _, tipo);
 }
 
-// Se tem foguete para rebater agora, aponta a mira para ele e devolve true.
-// bot = true: qualquer foguete do outro time vindo na direcao dele conta, e ele sopra assim que o foguete entra na area
+// If there is a rocket to reflect now, aims at it and returns true.
+// bot = true: any rocket from the other team heading toward it counts, and it airblasts as soon as the rocket enters the area
 bool Refletir(int client, float angles[3], bool bot = false)
 {
     if (bot)
@@ -366,7 +366,7 @@ bool Refletir(int client, float angles[3], bool bot = false)
         bool meu;
         if (bot)
         {
-            // de perto, logo depois de outro jogador rebater, o Dodgeball ainda nao trocou o alvo: olha o time e a direcao
+            // up close, right after another player reflects, Dodgeball has not changed the target yet: look at the team and the direction
             if (GetEntProp(ent, Prop_Send, "m_iTeamNum") == equipe)
                 continue;
             MakeVectorFromPoints(p, olho, ate);
@@ -417,7 +417,7 @@ bool Refletir(int client, float angles[3], bool bot = false)
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-    // O bot: fica parado onde nasceu e so sopra (nada de andar ou soltar fogo)
+    // The bot: stays where it spawned and only airblasts (no walking or flamethrower)
     if (g_bModoBot && client == g_iBot)
     {
         vel[0] = 0.0;

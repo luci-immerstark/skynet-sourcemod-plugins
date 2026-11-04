@@ -11,8 +11,8 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// O !map e o !votemap usam a troca de mapa antiga (nome em codigo e abertura da campanha quebrada).
-// O console do servidor (rcon) continua podendo usar.
+// !map and !votemap use the old map change (code name and broken campaign intro).
+// The server console (rcon) can still use it.
 
 public void OnPluginStart()
 {

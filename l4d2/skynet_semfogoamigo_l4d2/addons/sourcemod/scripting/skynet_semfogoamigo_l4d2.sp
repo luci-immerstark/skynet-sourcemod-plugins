@@ -13,12 +13,12 @@ public Plugin myinfo =
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
-// 1.2: o molotov volta a queimar quem jogou; o fogo de galao de gasolina (e de barril de combustivel,
-// inclusive quando um galao acende outro) nao fere sobrevivente nenhum; o fogo do proprio mapa fica mais forte.
+// 1.2: the molotov burns whoever threw it again; fire from a gas can (and from a fuel barrel,
+// including when one gas can lights another) hurts no survivor; the map's own fire gets stronger.
 
 #define FOGO_NADA     0
 #define FOGO_MOLOTOV  1
-#define FOGO_OUTRO    2     // galao de gasolina, barril de combustivel, fogos de artificio
+#define FOGO_OUTRO    2     // gas can, fuel barrel, fireworks
 
 ConVar g_cvAtivo;
 ConVar g_cvGalao;
@@ -51,10 +51,10 @@ public void OnEntityCreated(int entity, const char[] classname)
     {
         g_iFogo[entity] = FOGO_NADA;
         if (StrEqual(classname, "fire_cracker_blast"))
-            g_iFogo[entity] = FOGO_OUTRO;      // caixa de fogos de artificio
+            g_iFogo[entity] = FOGO_OUTRO;      // fireworks crate
         else if (StrEqual(classname, "inferno"))
         {
-            g_iFogo[entity] = FOGO_OUTRO;      // ate provar que veio de um molotov
+            g_iFogo[entity] = FOGO_OUTRO;      // until proven to come from a molotov
             RequestFrame(T_QualFogo, EntIndexToEntRef(entity));
         }
     }
@@ -74,7 +74,7 @@ public void OnEntityDestroyed(int entity)
     }
 }
 
-// o fogo do molotov nasce onde a garrafa quebrou, no mesmo instante
+// the molotov fire spawns where the bottle broke, at the same instant
 public void T_QualFogo(int ref)
 {
     int fogo = EntRefToEntIndex(ref);
@@ -92,7 +92,7 @@ public void T_QualFogo(int ref)
     g_iFogo[fogo] = molotov ? FOGO_MOLOTOV : FOGO_OUTRO;
 }
 
-// fogo que faz parte do mapa (fogueiras, carros e predios pegando fogo)
+// fire that is part of the map (bonfires, burning cars and buildings)
 bool FogoDoMapa(int inflictor, int atacante)
 {
     int ent = inflictor > 0 ? inflictor : atacante;
@@ -110,7 +110,7 @@ int TipoFogo(int ent)
     return (ent > MaxClients && ent < sizeof(g_iFogo)) ? g_iFogo[ent] : FOGO_NADA;
 }
 
-// Jogador responsavel por uma entidade (granada do lanca-granadas, fogo do molotov), ou 0
+// Player responsible for an entity (grenade launcher grenade, molotov fire), or 0
 int Dono(int ent)
 {
     if (ent >= 1 && ent <= MaxClients)
@@ -134,7 +134,7 @@ public Action AoLevarDano(int vitima, int &atacante, int &inflictor, float &dano
     if (fogo == FOGO_NADA)
         fogo = TipoFogo(atacante);
 
-    // fogo de galao de gasolina ou barril (inclusive um galao acendendo outro): sem dano
+    // gas can or barrel fire (including one gas can lighting another): no damage
     if (queima && fogo == FOGO_OUTRO && g_cvGalao.BoolValue)
     {
         dano = 0.0;
@@ -151,14 +151,14 @@ public Action AoLevarDano(int vitima, int &atacante, int &inflictor, float &dano
             quem = Dono(inflictor);
     }
 
-    // fogo amigo: so o proprio jogador se machuca (o molotov queima quem jogou)
+    // friendly fire: only the player themselves gets hurt (the molotov burns whoever threw it)
     if (g_cvAtivo.BoolValue && quem != 0 && quem != vitima && IsClientInGame(quem) && GetClientTeam(quem) == 2)
     {
         dano = 0.0;
         return Plugin_Handled;
     }
 
-    // fogo do proprio mapa (nao veio de jogador, molotov nem galao): mais forte
+    // the map's own fire (did not come from a player, molotov or gas can): stronger
     if (queima && fogo == FOGO_NADA && quem == 0 && g_cvFogoMapa.FloatValue != 1.0 && FogoDoMapa(inflictor, atacante))
     {
         dano *= g_cvFogoMapa.FloatValue;

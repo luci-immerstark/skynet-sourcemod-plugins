@@ -1,6 +1,6 @@
-// SKYNET: tira do chat os avisos de console que nao interessam aos jogadores:
-//   "Server cvar 'x' changed to ..." e as entradas/saidas/troca de nome/troca de time de bots.
-//   Os eventos continuam acontecendo para os outros plugins (ranking, logs); so nao sao mostrados no chat.
+// SKYNET: removes from chat the console notices that players do not care about:
+//   "Server cvar 'x' changed to ..." and bot joins/leaves/name changes/team changes.
+//   The events still happen for other plugins (ranking, logs); they are just not shown in chat.
 #include <sourcemod>
 #pragma semicolon 1
 #pragma newdecls required
