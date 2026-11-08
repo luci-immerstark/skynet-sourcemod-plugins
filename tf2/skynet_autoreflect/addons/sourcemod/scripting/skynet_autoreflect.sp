@@ -8,7 +8,7 @@ public Plugin myinfo =
     name = "SKYNET Auto Reflect",
     author = "SKYNET GAMING",
     description = "Auto reflect para admins (root) e o modo TODOS CONTRA O BOT automatico com poucos jogadores",
-    version = "4.2",
+    version = "4.3",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -173,6 +173,15 @@ void AcharBot()
 
 public Action T_Checar(Handle timer)
 {
+    // 4.3: while SKYNET Test Bots has test bots on the server (skynet_bots_teste > 0) this check pauses:
+    //   no bot is kicked and the ALL VS BOT mode does not switch, so admins can test with bots
+    ConVar cv = FindConVar("skynet_bots_teste");
+    int teste = (cv != null) ? cv.IntValue : 0;
+    if (teste > 0)
+    {
+        g_iEstavel = 0;
+        return Plugin_Continue;
+    }
     AcharBot();
     int humanos = HumanosNosTimes();
     bool quer = g_cvBotAuto.BoolValue && humanos >= 1 && humanos < g_cvJogadores.IntValue;

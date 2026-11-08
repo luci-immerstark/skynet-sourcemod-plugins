@@ -1,6 +1,6 @@
 # SKYNET Auto Reflect
 
-**Team Fortress 2** · v4.2 · `skynet_autoreflect.smx`
+**Team Fortress 2** · v4.3 · `skynet_autoreflect.smx`
 
 [All plugins](../../README.md)
 
@@ -51,3 +51,4 @@ Put any cvars you want to change in `cfg/server.cfg`.
 - 4.0: the ALL VS BOT mode turns on and off by itself based on the player count. The `!votebot` and `!botoff` commands are gone.
 - 4.1: sets `tf_bot_quota` to 0 before removing bots (the game kept adding random bots back).
 - 4.2: the bot reflects almost everything, even at close range, and works well on 100-tick servers.
+- 4.3: pauses while [SKYNET Test Bots](../skynet_bots/) has test bots on the server (`skynet_bots_teste`): no bot is kicked and the ALL VS BOT mode does not switch.

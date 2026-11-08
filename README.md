@@ -15,7 +15,7 @@ In-game chat messages are in Portuguese (some also in Spanish). Each plugin work
 | [Welcome](tf2/skynet_welcome/) | Welcome message in chat, once per connection. | 1.1 |
 | [Bot Names](tf2/skynet_botnames/) | Fixed names for bots and a clean chat when they join and leave. | 1.1 |
 | [Pyro Only](tf2/skynet_pyroonly/) | For Dodgeball servers: everyone plays Pyro. | 1.0 |
-| [Auto Reflect](tf2/skynet_autoreflect/) | Dodgeball: auto reflect for admins and an automatic ALL VS BOT mode with 1 to 3 players. | 4.2 |
+| [Auto Reflect](tf2/skynet_autoreflect/) | Dodgeball: auto reflect for admins and an automatic ALL VS BOT mode with 1 to 3 players. | 4.3 |
 | [Nuke](tf2/skynet_nuke/) | Dodgeball: the NUKE rocket is bigger than the others. | 2.0 |
 | [Entrada](tf2/skynet_entrada/) | Tells the chat who joined the server and from which country. | 1.0.0 |
 | [FOV](tf2/skynet_fov/) | `!fov <number>` to change the field of view, saved per player. | 1.1.0 |
