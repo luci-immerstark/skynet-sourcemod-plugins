@@ -25,6 +25,7 @@ In-game chat messages are in Portuguese (some also in Spanish). Each plugin work
 | [Sprays](tf2/skynet_sprays/) | Shows who made a spray and lets admins block offensive sprays. | 1.0.0 |
 | [Silence](tf2/skynet_silencio/) | Hides "cvar changed" notices from chat. | 1.0.0 |
 | [Test Bots](tf2/skynet_bots/) | Menu to add 1, 3, 5 or 10 test bots and remove them all (admins). | 1.0.0 |
+| [God Mode](tf2/skynet_god/) | `sm_god <target> [0\|1]`: admins turn god mode on or off for a player. | 1.0 |
 
 ## Left 4 Dead 2
 
