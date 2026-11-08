@@ -7,7 +7,7 @@
 // every firearm in the game (each one can be picked up many times)
 // and every melee weapon available on the map.
 
-#define PLUGIN_VERSION  "1.0"
+#define PLUGIN_VERSION  "1.1"
 #define GRADE_PASSO     34.0     // distance between one weapon and the next
 #define GRADE_MEIA      6        // 13 x 13 grid of points around the player
 #define RAIO_MAX        210.0
@@ -63,6 +63,9 @@ static const int g_iArmaGrupo[] = { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1,
 static const char g_sEspecial[][] = { "weapon_rifle_m60", "weapon_grenade_launcher", "weapon_chainsaw" };
 
 ConVar g_cvEnable, g_cvQtd, g_cvCss, g_cvPistolas, g_cvMelee, g_cvEspeciais, g_cvAviso;
+ConVar g_cvKits;
+int g_iKitRef = INVALID_ENT_REFERENCE;    // 1.1: our first aid kit spot in the saferoom
+#define MODELO_KIT "models/w_models/weapons/w_eq_medkit.mdl"
 
 char g_sLog[PLATFORM_MAX_PATH];
 bool g_bFeito;          // arsenal already set up this round
@@ -107,6 +110,7 @@ public void OnPluginStart()
     g_cvPistolas  = CreateConVar("skynet_arsenal_pistolas", "1", "Incluir Magnum e pistola", _, true, 0.0, true, 1.0);
     g_cvMelee     = CreateConVar("skynet_arsenal_melee", "2", "Quantas unidades de cada arma corpo a corpo (0 = nenhuma)", _, true, 0.0, true, 6.0);
     g_cvEspeciais = CreateConVar("skynet_arsenal_especiais", "1", "Quantas M60, lanca-granadas e motosserras (0 = nenhuma)", _, true, 0.0, true, 4.0);
+    g_cvKits = CreateConVar("skynet_arsenal_kits", "1", "Completa os kits medicos do abrigo: 1 para cada sobrevivente (0 = nao mexe)", _, true, 0.0, true, 1.0);
     g_cvAviso     = CreateConVar("skynet_arsenal_aviso", "1", "Avisar no chat quando o arsenal for montado", _, true, 0.0, true, 1.0);
     AutoExecConfig(true, "skynet_arsenal_l4d2");
 
@@ -127,6 +131,8 @@ public void OnMapStart()
 
     for (int i = 0; i < sizeof(g_sArmaModelo); i++)
         PrecacheModel(g_sArmaModelo[i], true);
+    PrecacheModel(MODELO_KIT, true);
+    g_iKitRef = INVALID_ENT_REFERENCE;
 
     // Creating and removing one unit fully loads the weapon (models and script)
     // before any player joins. Needed for the CS weapons and the specials.
@@ -178,6 +184,8 @@ public void Ev_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     int client = GetClientOfUserId(userid);
     if (client <= 0 || !IsClientInGame(client) || GetClientTeam(client) != 2)
         return;
+    if (g_bFeito)
+        MaisUmKit();      // 1.1: a survivor who arrived later gets a kit too
     if (!g_bFeito)
         Agendar();
     else if (!IsFakeClient(client) && !g_bAvisado[client])
@@ -600,6 +608,91 @@ int LerMelees(char lista[MAX_MELEE][64])
     return n;
 }
 
+// ---------------------------------------------------------------- 1.1: first aid kits
+int Sobreviventes()
+{
+    int n = 0;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i))
+            n++;
+    }
+    return n;
+}
+
+bool NoAbrigo(const float ancora[3], const float pos[3])
+{
+    float d = GetVectorDistance(ancora, pos);
+    if (g_bUsarAbrigo)
+    {
+        float p[3];
+        p = pos;
+        p[2] += 16.0;
+        return d <= 1200.0 && L4D_IsPositionInFirstCheckpoint(p);
+    }
+    return d <= 600.0;
+}
+
+// kits already in the saferoom (the map's own spots and loose kits), ignoring our own spot
+int KitsNoAbrigo(const float ancora[3], int ignorar)
+{
+    int n = 0, ent = -1;
+    float pos[3];
+    while ((ent = FindEntityByClassname(ent, "weapon_first_aid_kit_spawn")) != -1)
+    {
+        if (ent == ignorar)
+            continue;
+        GetEntPropVector(ent, Prop_Data, "m_vecAbsOrigin", pos);
+        if (NoAbrigo(ancora, pos))
+            n += HasEntProp(ent, Prop_Data, "m_itemCount") ? GetEntProp(ent, Prop_Data, "m_itemCount") : 1;
+    }
+    ent = -1;
+    while ((ent = FindEntityByClassname(ent, "weapon_first_aid_kit")) != -1)
+    {
+        if (HasEntProp(ent, Prop_Send, "m_hOwner") && GetEntPropEnt(ent, Prop_Send, "m_hOwner") != -1)
+            continue;       // in someone's hands
+        GetEntPropVector(ent, Prop_Data, "m_vecAbsOrigin", pos);
+        if (NoAbrigo(ancora, pos))
+            n++;
+    }
+    return n;
+}
+
+// one kit spot that can be picked up as many times as kits are missing
+void CompletarKits(const float ancora[3], const float pos[3])
+{
+    int antigo = EntRefToEntIndex(g_iKitRef);
+    g_iKitRef = INVALID_ENT_REFERENCE;
+    int falta = Sobreviventes() - KitsNoAbrigo(ancora, antigo);
+    if (falta <= 0)
+        return;
+    int ent = CreateEntityByName("weapon_first_aid_kit_spawn");
+    if (ent == -1 || !EdictSeguro(ent))
+        return;
+    char s[8];
+    IntToString(falta, s, sizeof(s));
+    DispatchKeyValue(ent, "count", s);
+    DispatchKeyValue(ent, "disableshadows", "1");
+    SetEntityModel(ent, MODELO_KIT);
+    float p[3];
+    p = pos;
+    p[2] += 2.0;
+    TeleportEntity(ent, p, NULL_VECTOR, NULL_VECTOR);
+    DispatchSpawn(ent);
+    SetEntityMoveType(ent, MOVETYPE_NONE);
+    Registrar(ent);
+    g_iKitRef = EntIndexToEntRef(ent);
+    LogToFileEx(g_sLog, "kits no abrigo: +%d (1 por sobrevivente)", falta);
+}
+
+void MaisUmKit()
+{
+    int ent = EntRefToEntIndex(g_iKitRef);
+    if (ent == INVALID_ENT_REFERENCE || !HasEntProp(ent, Prop_Data, "m_itemCount"))
+        return;
+    SetEntProp(ent, Prop_Data, "m_itemCount", GetEntProp(ent, Prop_Data, "m_itemCount") + 1);
+}
+
 int MontarArsenal(const float ancora[3], int quem, const char[] motivo)
 {
     LimparArsenal();
@@ -683,6 +776,10 @@ int MontarArsenal(const float ancora[3], int quem, const char[] motivo)
         }
         usado++;
     }
+
+    // 4) first aid kits: 1 per survivor in the saferoom
+    if (g_cvKits.BoolValue)
+        CompletarKits(ancora, pontos[usado % np]);
 
     char nome[64] = "?";
     if (quem > 0 && IsClientInGame(quem))

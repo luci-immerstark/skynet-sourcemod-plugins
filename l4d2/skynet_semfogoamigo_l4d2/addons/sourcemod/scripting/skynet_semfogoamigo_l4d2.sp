@@ -8,8 +8,8 @@ public Plugin myinfo =
 {
     name = "SKYNET Sem Fogo Amigo (L4D2)",
     author = "SKYNET GAMING",
-    description = "Sem fogo amigo; molotov queima quem jogou; fogo de galao nao fere sobrevivente; fogo do mapa mais forte",
-    version = "1.3",
+    description = "Sem fogo amigo; molotov nao fere quem jogou; fogo de galao nao fere sobrevivente; fogo do mapa mais forte",
+    version = "1.4",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -22,6 +22,7 @@ public Plugin myinfo =
 
 ConVar g_cvAtivo;
 ConVar g_cvGalao;
+ConVar g_cvDono;
 ConVar g_cvFogoMapa;
 int g_iFogo[2049];
 float g_fMolTempo = -100.0;
@@ -31,6 +32,7 @@ public void OnPluginStart()
 {
     g_cvAtivo    = CreateConVar("skynet_sem_fogo_amigo", "1", "1 = sobreviventes nao causam dano uns nos outros", _, true, 0.0, true, 1.0);
     g_cvGalao    = CreateConVar("skynet_galao_sem_dano", "1", "1 = o fogo de galao de gasolina, de barril e dos fogos de artificio nao fere sobreviventes", _, true, 0.0, true, 1.0);
+    g_cvDono     = CreateConVar("skynet_molotov_queima_dono", "0", "1 = o molotov tambem queima quem jogou", _, true, 0.0, true, 1.0);
     g_cvFogoMapa = CreateConVar("skynet_fogo_mapa", "3.0", "Multiplicador do dano do fogo do proprio mapa nos sobreviventes (1 = normal do jogo)", _, true, 0.0, true, 20.0);
     AutoExecConfig(true, "skynet_semfogoamigo_l4d2");
     for (int i = 1; i <= MaxClients; i++)
@@ -152,6 +154,13 @@ public Action AoLevarDano(int vitima, int &atacante, int &inflictor, float &dano
     }
 
     // friendly fire: only the player themselves gets hurt (the molotov burns whoever threw it)
+    // 1.4: own molotov (or any fire the player started) does not hurt whoever threw it
+    if (queima && quem == vitima && !g_cvDono.BoolValue)
+    {
+        dano = 0.0;
+        return Plugin_Handled;
+    }
+
     if (g_cvAtivo.BoolValue && quem != 0 && quem != vitima && IsClientInGame(quem) && GetClientTeam(quem) == 2)
     {
         dano = 0.0;

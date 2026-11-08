@@ -10,7 +10,7 @@ public Plugin myinfo =
     name = "SKYNET Teleporte (L4D2)",
     author = "SKYNET GAMING",
     description = "Admin vai ate um jogador (!goto) ou traz um jogador ate ele (!bring)",
-    version = "1.1",
+    version = "1.2",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -196,7 +196,7 @@ void Lista(int client, bool ir, bool doAdmin = false)
     char id[12], nome[MAX_NAME_LENGTH + 8];
     for (int i = 1; i <= MaxClients; i++)
     {
-        if (i == client || !Movivel(i) || (!ir && !CanUserTarget(client, i)))
+        if (i == client || !Movivel(i) || GetClientTeam(i) != 2 || (!ir && !CanUserTarget(client, i)))
             continue;
         IntToString(GetClientUserId(i), id, sizeof(id));
         FormatEx(nome, sizeof(nome), "%s%N", GetClientTeam(i) == 3 ? "[INF] " : "", i);
@@ -210,6 +210,7 @@ void Lista(int client, bool ir, bool doAdmin = false)
         return;
     }
     m.ExitBackButton = doAdmin;
+    m.Pagination = 5;     // 1.2: room for the page options
     m.Display(client, MENU_TIME_FOREVER);
 }
 

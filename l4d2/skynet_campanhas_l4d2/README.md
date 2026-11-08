@@ -1,6 +1,6 @@
 # SKYNET Next Campaign
 
-**Left 4 Dead 2** · v1.6 · `skynet_campanhas_l4d2.smx`
+**Left 4 Dead 2** · v1.7 · `skynet_campanhas_l4d2.smx`
 
 [All plugins](../../README.md)
 
@@ -12,6 +12,7 @@ Next-campaign vote during the finale, automatic switch after the rescue, and a c
 - After the rescue it waits for the credits and switches to the first chapter of the chosen campaign, with the normal campaign intro.
 - If the team loses the finale, the choice still stands and the vote does not open again.
 - `!proxima` shows the next campaign to any player.
+- The server always starts on the same map: if that campaign was played recently, the first player who joins after a server start triggers a change to a campaign drawn by the same vote rules (no more repeating the same campaign after every restart).
 - Admin menu (`!admin`): **Trocar campanha** (switches now) and **Votar campanha** (opens the vote; the switch only happens after the rescue).
 - Covers the 14 official campaigns (c1 to c14). History is saved to `data/skynet_campanhas.txt`.
 

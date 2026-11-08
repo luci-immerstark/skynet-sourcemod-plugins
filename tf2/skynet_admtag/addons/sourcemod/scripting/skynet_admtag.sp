@@ -6,15 +6,17 @@ public Plugin myinfo =
 {
     name = "SKYNET Admin Tag",
     author = "SKYNET GAMING",
-    description = "Tag [ADM] (dourada) e [MOD] (azul) no chat",
-    version = "1.2",
+    description = "Tag [ADM] (dourada), [MOD] (azul) e [VIP] (roxa) no chat",
+    version = "1.3",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
 // [ADM]: whoever can ban (or is root). [MOD]: whoever has basic admin access but cannot ban (Moderator group).
-//   You can change who gets each tag with overrides in admin_overrides.cfg: "sm_tag_adm" and "sm_tag_mod".
+// [VIP]: whoever only has the reserved slot (flag a, VIP group: Discord boosters).
+//   You can change who gets each tag with overrides in admin_overrides.cfg: "sm_tag_adm", "sm_tag_mod" and "sm_tag_vip".
 #define COR_ADM "FFD700"
 #define COR_MOD "4FC3F7"
+#define COR_VIP "B266FF"
 
 public void OnPluginStart()
 {
@@ -29,8 +31,8 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     int author = msg.ReadByte();
     if (author < 1 || author > MaxClients || !IsClientInGame(author) || IsFakeClient(author))
         return Plugin_Continue;
-    bool adm = CheckCommandAccess(author, "sm_tag_adm", ADMFLAG_BAN, true);
-    if (!adm && !CheckCommandAccess(author, "sm_tag_mod", ADMFLAG_GENERIC, true))
+    int tipo = Tipo(author);
+    if (tipo == 0)
         return Plugin_Continue;
 
     bool chat = msg.ReadByte() != 0;
@@ -46,7 +48,7 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
     DataPack dp = new DataPack();
     dp.WriteCell(GetClientUserId(author));
     dp.WriteCell(chat);
-    dp.WriteCell(adm);
+    dp.WriteCell(tipo);
     dp.WriteString(fmt);
     dp.WriteString(name);
     dp.WriteString(text);
@@ -55,6 +57,18 @@ public Action OnSayText2(UserMsg msg_id, BfRead msg, const int[] players, int pl
         dp.WriteCell(GetClientUserId(players[i]));
     RequestFrame(Frame_Resend, dp);
     return Plugin_Handled;
+}
+
+// 3 = [ADM] (can ban), 2 = [MOD] (basic admin access), 1 = [VIP] (reserved slot, VIP group), 0 = no tag
+int Tipo(int client)
+{
+    if (CheckCommandAccess(client, "sm_tag_adm", ADMFLAG_BAN, true))
+        return 3;
+    if (CheckCommandAccess(client, "sm_tag_mod", ADMFLAG_GENERIC, true))
+        return 2;
+    if (CheckCommandAccess(client, "sm_tag_vip", ADMFLAG_RESERVATION, true))
+        return 1;
+    return 0;
 }
 
 // Same prefix the game would use (dead, team, spectator, coach)
@@ -74,7 +88,7 @@ public void Frame_Resend(DataPack dp)
     dp.Reset();
     int author = GetClientOfUserId(dp.ReadCell());
     bool chat = view_as<bool>(dp.ReadCell());
-    bool adm = view_as<bool>(dp.ReadCell());
+    int tipo = dp.ReadCell();
     char fmt[64], name[MAX_NAME_LENGTH], text[256];
     dp.ReadString(fmt, sizeof(fmt));
     dp.ReadString(name, sizeof(name));
@@ -94,7 +108,7 @@ public void Frame_Resend(DataPack dp)
 
     char pre[32], linha[320];
     Prefixo(fmt, pre, sizeof(pre));
-    Format(linha, sizeof(linha), "\x01%s\x07%s[%s] \x03%s\x01 :  %s", pre, adm ? COR_ADM : COR_MOD, adm ? "ADM" : "MOD", name, text);
+    Format(linha, sizeof(linha), "\x01%s\x07%s[%s] \x03%s\x01 :  %s", pre, tipo == 3 ? COR_ADM : (tipo == 2 ? COR_MOD : COR_VIP), tipo == 3 ? "ADM" : (tipo == 2 ? "MOD" : "VIP"), name, text);
 
     BfWrite bf = UserMessageToBfWrite(StartMessage("SayText2", clients, total, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
     bf.WriteByte(author);

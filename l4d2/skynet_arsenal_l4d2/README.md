@@ -1,6 +1,6 @@
 # SKYNET Arsenal
 
-**Left 4 Dead 2** · v1.0 · `skynet_arsenal_l4d2.smx`
+**Left 4 Dead 2** · v1.1 · `skynet_arsenal_l4d2.smx`
 
 [All plugins](../../README.md)
 
@@ -10,6 +10,7 @@ Places lots of firearms and melee weapons in the starting saferoom of every chap
 - Every firearm in the game, each one can be picked up several times (`skynet_arsenal_qtd`).
 - Optional: Counter-Strike weapons (MP5, SG552, Scout, AWP), Magnum and pistol, M60, grenade launcher and chainsaw.
 - Every melee weapon available on the map.
+- First aid kits in the starting saferoom: one per survivor (`skynet_arsenal_kits`); a survivor who joins later gets one too.
 - Finds a clear, flat spot inside the saferoom by itself, away from the doors, without taking anyone's weapon.
 - `sm_arsenal` builds the arsenal where the admin stands; `sm_arsenal limpar` removes it.
 
@@ -39,3 +40,4 @@ Places lots of firearms and melee weapons in the starting saferoom of every chap
 | `skynet_arsenal_melee` | `2` | Units of each melee weapon (0 = none) |
 | `skynet_arsenal_especiais` | `1` | How many M60s, grenade launchers and chainsaws (0 = none) |
 | `skynet_arsenal_aviso` | `1` | Announce in chat when the arsenal is built |
+| `skynet_arsenal_kits` | `1` | Tops up the saferoom first aid kits: one for each survivor (0 = leave as is) |

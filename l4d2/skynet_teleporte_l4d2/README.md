@@ -1,13 +1,13 @@
 # SKYNET Teleport / Teleporte
 
-**Left 4 Dead 2** · v1.1 · `skynet_teleporte_l4d2.smx`
+**Left 4 Dead 2** · v1.2 · `skynet_teleporte_l4d2.smx`
 
 [All plugins](../../README.md)
 
 Admins go to a player (`!goto`) or bring a player to them (`!bring`).
 
 ## What it does
-- Without a name, the commands open the player list.
+- Without a name, the commands open the player list: survivors only, 5 per page with Next/Back.
 - **Teleport** section in the admin menu (`!admin`) with "Go to a player" and "Bring a player".
 - Does not teleport players hanging from a ledge (that gets them stuck).
 - Texts in Portuguese, English and Spanish (`translations/skynet_teleporte.phrases.txt`).

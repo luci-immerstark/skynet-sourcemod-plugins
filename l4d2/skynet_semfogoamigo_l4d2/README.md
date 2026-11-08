@@ -1,6 +1,6 @@
 # SKYNET No Friendly Fire / Sem Fogo Amigo
 
-**Left 4 Dead 2** · v1.3 · `skynet_semfogoamigo_l4d2.smx`
+**Left 4 Dead 2** · v1.4 · `skynet_semfogoamigo_l4d2.smx`
 
 [All plugins](../../README.md)
 
@@ -8,7 +8,7 @@ No friendly fire between survivors, with custom rules for fire and explosions.
 
 ## What it does
 - Survivors deal no damage to each other (bullets, grenades, grenade launcher).
-- A molotov still burns the player who threw it.
+- A molotov (or any fire a player starts) does not burn the player who threw it (`skynet_molotov_queima_dono 1` turns that back on).
 - Fire from gas cans, fuel barrels and fireworks does not hurt any survivor.
 - Map fire (bonfires, burning cars and buildings) gets stronger (`skynet_fogo_mapa`).
 
@@ -28,3 +28,4 @@ No friendly fire between survivors, with custom rules for fire and explosions.
 | `skynet_sem_fogo_amigo` | `1` | 1 = survivors deal no damage to each other |
 | `skynet_galao_sem_dano` | `1` | 1 = fire from gas cans, barrels and fireworks does not hurt survivors |
 | `skynet_fogo_mapa` | `3.0` | Damage multiplier for map fire on survivors (1 = game default) |
+| `skynet_molotov_queima_dono` | `0` | 1 = the molotov also burns the player who threw it |

@@ -21,7 +21,7 @@ public Plugin myinfo =
     name = "SKYNET Proxima Campanha (L4D2)",
     author = "SKYNET GAMING",
     description = "Votacao da proxima campanha na fase final, troca automatica no fim e menu de campanhas para os admins",
-    version = "1.6",
+    version = "1.7",
     url = "https://github.com/luci-immerstark/skynet-sourcemod-plugins"
 };
 
@@ -55,6 +55,8 @@ int g_VoteCounter;               // how many votes have happened
 int g_Atual = -1;                // campaign in progress (recorded when someone leaves the saferoom)
 
 int g_Proxima = -1;              // chosen for after this campaign
+bool g_bBoot = true;            // 1.7: first map after the server starts
+bool g_bTrocaBoot;
 bool g_bVotou;                   // this map's vote has already happened
 char g_sMapaVoto[PLATFORM_MAX_PATH];   // map (finale) where the vote happened: the result holds until the rescue
 TopMenu g_hTopMenu;
@@ -240,6 +242,10 @@ void SalvarEstado()
 public void OnMapStart()
 {
     CarregarEstado();
+    // 1.7: the server always starts on the same map; on the first map after it starts, if that campaign was
+    // played recently, the first player who connects triggers a change to a campaign drawn by the vote rules
+    g_bTrocaBoot = g_bBoot && GetEngineTime() < 600.0;
+    g_bBoot = false;
     // The finale vote result only holds until the rescue. If the team loses and the finale
     // restart, the choice stays saved and the vote does not open again.
     char mapa[PLATFORM_MAX_PATH];
@@ -791,4 +797,27 @@ public Action Cmd_Status(int client, int args)
     if (g_Proxima != -1)
         ReplyToCommand(client, "Proxima campanha: %s", g_sNome[g_Proxima]);
     return Plugin_Handled;
+}
+
+public void OnClientConnected(int client)
+{
+    if (!g_bTrocaBoot || IsFakeClient(client))
+        return;
+    g_bTrocaBoot = false;
+    char mapa[PLATFORM_MAX_PATH];
+    GetCurrentMap(mapa, sizeof(mapa));
+    int c = CampanhaDoMapa(mapa);
+    if (c == -1 || !StrEqual(mapa, g_sInicio[c], false) || g_Contador - g_LastPlayed[c] > g_cvCooldown.IntValue)
+        return;
+    int saida[1];
+    if (MontarOpcoes(saida, 1, false) < 1)
+        return;
+    LogToFileEx(g_sLog, "Servidor iniciou em %s (%s), jogada ha pouco: trocando para %s (%s)", g_sNome[c], mapa, g_sNome[saida[0]], g_sInicio[saida[0]]);
+    CreateTimer(1.0, T_TrocaBoot, saida[0]);
+}
+
+public Action T_TrocaBoot(Handle t, any c)
+{
+    ServerCommand("changelevel %s", g_sInicio[c]);
+    return Plugin_Stop;
 }

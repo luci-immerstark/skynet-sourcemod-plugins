@@ -1,10 +1,10 @@
 # SKYNET Admin Tag
 
-**Team Fortress 2** · v1.2 · `skynet_admtag.smx`
+**Team Fortress 2** · v1.3 · `skynet_admtag.smx`
 
 [All plugins](../../README.md)
 
-Gold `[ADM]` tag before admin names and blue `[MOD]` tag before moderator names in chat.
+Gold `[ADM]` tag before admin names, blue `[MOD]` before moderators and purple `[VIP]` before VIPs in chat.
 
 ## What it does
 - Keeps the game's own prefixes: *DEAD*, (TEAM), (Spectator) and (Coach).
@@ -21,6 +21,9 @@ Gold `[ADM]` tag before admin names and blue `[MOD]` tag before moderator names 
 
 ## Permission
 Overrides `sm_tag_adm` (default: flag `d`) and `sm_tag_mod` (default: flag `b`). To change who gets each tag, use `addons/sourcemod/configs/admin_overrides.cfg`.
+
+## Changes in 1.3
+- New purple `[VIP]` tag (for example, server boosters with a reserved slot).
 
 ## Changes in 1.2
 - New `[MOD]` tag for moderators.
